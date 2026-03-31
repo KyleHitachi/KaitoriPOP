@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+  --red-title: #d50000;
+  --red-label: #8b1a1a;
+  --gold-light: #c9a655;
+  --gold-mid: #a8863a;
+  --gold-dark: #7a6230;
+  --gold-border: #6b5528;
+  --black-deep: #1a1714;
+  --black-panel: rgba(20, 18, 14, 0.88);
+  --bg-warm: #c8c4be;
+  --white: #ffffff;
+  --white-90: rgba(255, 255, 255, 0.92);
+  --text-footer: #2a2520;
+}
+
+body {
+  font-family: "Inter", "Noto Sans JP", sans-serif;
+  background: #f5f5f5;
+  color: #1c1917;
+}
