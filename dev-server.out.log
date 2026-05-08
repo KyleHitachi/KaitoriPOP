@@ -1,0 +1,68 @@
+
+> kaitori-pop@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.13
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.36:3000
+
+ ✓ Starting...
+ ✓ Ready in 1958ms
+ ○ Compiling / ...
+ ✓ Compiled / in 797ms (561 modules)
+ GET / 200 in 1123ms
+ GET / 200 in 92ms
+ ○ Compiling /api/parse-excel ...
+ ✓ Compiled /api/parse-excel in 2.2s (599 modules)
+ POST /api/parse-excel 200 in 2763ms
+ GET / 200 in 734ms
+ GET / 200 in 727ms
+ ○ Compiling /api/download-images ...
+ ✓ Compiled /api/download-images in 662ms (601 modules)
+ GET / 200 in 753ms
+ GET / 200 in 757ms
+ POST /api/download-images 200 in 7188ms
+ ○ Compiling /api/generate-png ...
+ ✓ Compiled /api/generate-png in 757ms (595 modules)
+ POST /api/generate-png 200 in 16677ms
+ GET / 200 in 1564ms
+ POST /api/parse-excel 200 in 399ms
+ GET / 200 in 166ms
+ POST /api/parse-excel 200 in 59ms
+ ✓ Compiled in 760ms (576 modules)
+ GET / 200 in 152ms
+ ✓ Compiled in 516ms (576 modules)
+ ✓ Compiled in 144ms (248 modules)
+ ✓ Compiled /api/parse-excel in 74ms (351 modules)
+ POST /api/parse-excel 200 in 265ms
+ ✓ Compiled in 415ms (576 modules)
+ GET / 200 in 210ms
+ ✓ Compiled /api/parse-excel in 64ms (351 modules)
+ POST /api/parse-excel 200 in 189ms
+ ✓ Compiled in 183ms (248 modules)
+ GET / 200 in 95ms
+ GET / 200 in 458ms
+ POST /api/parse-excel 200 in 55ms
+ ✓ Compiled /api/download-images in 397ms (347 modules)
+ POST /api/download-images 200 in 6314ms
+ ✓ Compiled /api/generate-png in 201ms (357 modules)
+ POST /api/generate-png 200 in 12210ms
+ GET / 200 in 589ms
+ ✓ Compiled /api/parse-excel in 255ms (351 modules)
+ POST /api/parse-excel 200 in 621ms
+ ✓ Compiled /api/download-images in 187ms (347 modules)
+ POST /api/download-images 200 in 5630ms
+ ✓ Compiled /api/generate-png in 235ms (357 modules)
+ POST /api/generate-png 200 in 5095ms
+ GET / 200 in 571ms
+ ✓ Compiled /api/parse-excel in 206ms (351 modules)
+ POST /api/parse-excel 200 in 544ms
+ ✓ Compiled /api/download-images in 206ms (347 modules)
+ POST /api/download-images 200 in 4508ms
+ ✓ Compiled /api/generate-png in 183ms (357 modules)
+ POST /api/generate-png 200 in 2990ms
+ GET / 200 in 546ms
+ ✓ Compiled /api/parse-excel in 191ms (351 modules)
+ POST /api/parse-excel 200 in 610ms
+ GET / 200 in 384ms
+ POST /api/parse-excel 200 in 26ms

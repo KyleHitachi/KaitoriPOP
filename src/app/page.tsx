@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SheetConfig, Card } from "@/lib/types";
+import { SheetConfig, Card, GRID_TOTAL } from "@/lib/types";
 import {
   CTA_BORDER_WIDTH,
   CTA_MIN_WIDTH,
@@ -26,6 +26,7 @@ import CardEditor from "@/components/CardEditor";
 import SettingsPanel from "@/components/SettingsPanel";
 
 type NoticeTone = "info" | "success" | "error";
+type PreviewZoom = "fit" | 0.5 | 0.75 | 1;
 
 interface Notice {
   tone: NoticeTone;
@@ -81,6 +82,7 @@ const COPY = {
   tipsBody:
     "\u30b7\u30fc\u30c8\u540d\u306f\u77ed\u3081\u3001\u0031\u30b7\u30fc\u30c8\u6700\u5927\u0033\u0036\u679a\u3001\u4fa1\u683c\u78ba\u8a8d\u5f8c\u306b\u66f8\u304d\u51fa\u3059\u3068\u5b89\u5b9a\u3057\u307e\u3059\u3002",
   sampleCsv: "\u30b5\u30f3\u30d7\u30ebCSV",
+  trySample: "サンプルCSVで試す",
   openSettings: "\u8a2d\u5b9a\u3092\u958b\u304f",
   closeSettings: "\u8a2d\u5b9a\u3092\u9589\u3058\u308b",
   fetchImages: "\u753b\u50cf\u3092\u53d6\u5f97",
@@ -89,6 +91,16 @@ const COPY = {
   generating: "\u751f\u6210\u4e2d\u002e\u002e\u002e",
   helper:
     "\u30c9\u30e9\u30c3\u30b0\u3067\u4e26\u3073\u66ff\u3048\u3001\u30ab\u30fc\u30c9\u3092\u30af\u30ea\u30c3\u30af\u3057\u3066\u500b\u5225\u8a2d\u5b9a\u3001\u53f3\u5074\u306e\u8a2d\u5b9a\u3067\u30bf\u30a4\u30c8\u30eb\u3084\u30ed\u30b4\u3092\u8abf\u6574\u3067\u304d\u307e\u3059\u3002",
+  sampleError: "サンプルCSVの読み込みに失敗しました。",
+  workflowLoad: "読込",
+  workflowImages: "画像",
+  workflowAdjust: "調整",
+  workflowExport: "出力",
+  checksTitle: "出力前チェック",
+  zoomFit: "全体",
+  zoom50: "50%",
+  zoom75: "75%",
+  zoom100: "100%",
 };
 
 function buildNoticeClasses(tone: NoticeTone): string {
@@ -101,6 +113,12 @@ function buildNoticeClasses(tone: NoticeTone): string {
   return "border-amber-200 bg-amber-50 text-amber-900";
 }
 
+function buildCheckToneClasses(tone: NoticeTone): string {
+  if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-900";
+  if (tone === "error") return "border-red-200 bg-red-50 text-red-900";
+  return "border-amber-200 bg-amber-50 text-amber-900";
+}
+
 export default function Home() {
   const [sheets, setSheets] = useState<SheetConfig[]>([]);
   const [activeSheet, setActiveSheet] = useState(0);
@@ -108,7 +126,8 @@ export default function Home() {
   const [editingCardIndex, setEditingCardIndex] = useState<number | null>(null);
   const [generating, setGenerating] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [previewScale, setPreviewScale] = useState(1);
+  const [fitPreviewScale, setFitPreviewScale] = useState(1);
+  const [previewZoom, setPreviewZoom] = useState<PreviewZoom>("fit");
   const [previewCanvasHeight, setPreviewCanvasHeight] = useState(
     PREVIEW_CANVAS_HEIGHT
   );
@@ -118,6 +137,8 @@ export default function Home() {
   });
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const previewCanvasRef = useRef<HTMLDivElement | null>(null);
+
+  const previewScale = previewZoom === "fit" ? fitPreviewScale : previewZoom;
 
   const handleUpload = useCallback(async (file: File) => {
     setLoading(true);
@@ -165,6 +186,23 @@ export default function Home() {
       setLoading(false);
     }
   }, []);
+
+  const handleLoadSample = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/sample-buylist.csv");
+      if (!response.ok) throw new Error(COPY.sampleError);
+      const blob = await response.blob();
+      const file = new File([blob], "sample-buylist.csv", { type: "text/csv" });
+      await handleUpload(file);
+    } catch (error) {
+      setNotice({
+        tone: "error",
+        message: error instanceof Error ? error.message : COPY.sampleError,
+      });
+      setLoading(false);
+    }
+  }, [handleUpload]);
 
   const handleDownloadImages = useCallback(async () => {
     if (sheets.length === 0) return;
@@ -322,6 +360,65 @@ export default function Home() {
     [currentConfig]
   );
   const hasSheets = sheets.length > 0;
+  const missingImageCount = currentConfig
+    ? currentConfig.cards.length - fetchedImageCount
+    : 0;
+  const missingPriceCount = useMemo(
+    () =>
+      currentConfig?.cards.filter(
+        (card) =>
+          !card.priceOverride &&
+          card.priceJp === null &&
+          card.priceEn === null
+      ).length ?? 0,
+    [currentConfig]
+  );
+  const outputChecks = useMemo(() => {
+    if (!currentConfig) return [];
+
+    return [
+      {
+        tone: "success" as NoticeTone,
+        label: "カード枚数",
+        value: `${currentConfig.cards.length}/${GRID_TOTAL}`,
+      },
+      {
+        tone: missingImageCount === 0 ? "success" as NoticeTone : "info" as NoticeTone,
+        label: "画像",
+        value:
+          missingImageCount === 0
+            ? "取得済み"
+            : `${missingImageCount}枚未取得。PNG出力時に自動取得します。`,
+      },
+      {
+        tone: missingPriceCount === 0 ? "success" as NoticeTone : "error" as NoticeTone,
+        label: "価格",
+        value:
+          missingPriceCount === 0
+            ? "入力済み"
+            : `${missingPriceCount}枚に価格がありません。`,
+      },
+      {
+        tone: currentConfig.title.length <= 12 ? "success" as NoticeTone : "info" as NoticeTone,
+        label: "タイトル",
+        value:
+          currentConfig.title.length <= 12
+            ? "収まりやすい長さです"
+            : "長めです。書き出し前に見切れを確認してください。",
+      },
+      {
+        tone:
+          currentConfig.updatedAtText.length <= 24
+            ? "success" as NoticeTone
+            : "info" as NoticeTone,
+        label: "更新日",
+        value:
+          currentConfig.updatedAtText.length <= 24
+            ? "収まりやすい長さです"
+            : "長めです。右下表示の見切れを確認してください。",
+      },
+    ];
+  }, [currentConfig, missingImageCount, missingPriceCount]);
 
   useEffect(() => {
     const viewportNode = previewViewportRef.current;
@@ -330,7 +427,7 @@ export default function Home() {
 
     const updatePreviewMetrics = () => {
       const nextScale = Math.min(viewportNode.clientWidth / PREVIEW_CANVAS_WIDTH, 1);
-      setPreviewScale(nextScale);
+      setFitPreviewScale(nextScale);
       setPreviewCanvasHeight(
         Math.max(canvasNode.scrollHeight, canvasNode.offsetHeight, PREVIEW_CANVAS_HEIGHT)
       );
@@ -413,8 +510,12 @@ export default function Home() {
 
         {!hasSheets ? (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="rounded-[28px] border border-stone-200 bg-white/90 p-6 shadow-[0_24px_80px_rgba(66,39,9,0.08)]">
-              <ExcelUploader onUpload={handleUpload} loading={loading} />
+            <div className="rounded-[28px] border border-stone-200 bg-white/90 p-4 shadow-[0_24px_80px_rgba(66,39,9,0.08)] sm:p-6">
+              <ExcelUploader
+                onUpload={handleUpload}
+                onLoadSample={handleLoadSample}
+                loading={loading}
+              />
             </div>
 
             <div className="rounded-[28px] border border-stone-200 bg-stone-950 p-6 text-stone-100 shadow-[0_24px_80px_rgba(24,18,8,0.28)]">
@@ -440,10 +541,18 @@ export default function Home() {
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-stone-300">
                 {COPY.tipsLabel}
                 <div className="mt-2">{COPY.tipsBody}</div>
+                <button
+                  type="button"
+                  onClick={handleLoadSample}
+                  disabled={loading}
+                  className="mt-3 inline-flex rounded-full bg-amber-400 px-4 py-2 text-xs font-black text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {COPY.trySample}
+                </button>
                 <a
                   href="/sample-buylist.csv"
                   download="sample-buylist.csv"
-                  className="mt-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/15"
+                  className="ml-2 mt-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15"
                 >
                   {COPY.sampleCsv}
                 </a>
@@ -457,6 +566,55 @@ export default function Home() {
               activeIndex={activeSheet}
               onSelect={setActiveSheet}
             />
+
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(360px,480px)]">
+              <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: COPY.workflowLoad, done: true },
+                    {
+                      label: COPY.workflowImages,
+                      done:
+                        currentConfig.cards.length > 0 &&
+                        fetchedImageCount === currentConfig.cards.length,
+                    },
+                    { label: COPY.workflowAdjust, done: showSettings },
+                    { label: COPY.workflowExport, done: false },
+                  ].map((step, index) => (
+                    <div
+                      key={step.label}
+                      className={`rounded-xl border px-3 py-2 text-center text-xs font-bold ${
+                        step.done
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                          : "border-stone-200 bg-stone-50 text-stone-500"
+                      }`}
+                    >
+                      <div className="text-[10px] opacity-70">STEP {index + 1}</div>
+                      <div>{step.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+                <div className="mb-2 text-xs font-black tracking-[0.16em] text-stone-500">
+                  {COPY.checksTitle}
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                  {outputChecks.map((check) => (
+                    <div
+                      key={check.label}
+                      className={`rounded-xl border px-3 py-2 text-xs ${buildCheckToneClasses(
+                        check.tone
+                      )}`}
+                    >
+                      <span className="font-black">{check.label}: </span>
+                      <span className="font-medium">{check.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             <div className="flex flex-col gap-4 xl:flex-row">
               <div className="min-w-0 flex-1 space-y-4">
@@ -484,6 +642,27 @@ export default function Home() {
                     )}
                     {generating ? COPY.generating : COPY.exportPng}
                   </button>
+                  <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1">
+                    {[
+                      { label: COPY.zoomFit, value: "fit" as PreviewZoom },
+                      { label: COPY.zoom50, value: 0.5 as PreviewZoom },
+                      { label: COPY.zoom75, value: 0.75 as PreviewZoom },
+                      { label: COPY.zoom100, value: 1 as PreviewZoom },
+                    ].map((option) => (
+                      <button
+                        key={option.label}
+                        type="button"
+                        onClick={() => setPreviewZoom(option.value)}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                          previewZoom === option.value
+                            ? "bg-stone-900 text-white"
+                            : "text-stone-600 hover:bg-white"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                   <div className="ml-auto text-xs text-stone-500">
                     {COPY.activeSheet}:{" "}
                     <span className="font-semibold text-stone-700">
@@ -494,17 +673,18 @@ export default function Home() {
 
                 <div
                   ref={previewViewportRef}
-                  className="overflow-hidden rounded-[28px] border border-stone-300/70 bg-[#ebe5d8] p-4 shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
+                  className="overflow-auto rounded-[28px] border border-stone-300/70 bg-[#ebe5d8] p-4 shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
                 >
                   <div
                     className="origin-top-left overflow-hidden rounded-[24px] border border-stone-300/60 bg-[#c8c4be] shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
                     style={{
-                      width: `${PREVIEW_CANVAS_WIDTH}px`,
+                      width: `${Math.round(PREVIEW_CANVAS_WIDTH * previewScale)}px`,
                       height: `${Math.round(previewCanvasHeight * previewScale)}px`,
                     }}
                   >
                     <div
                       ref={previewCanvasRef}
+                      className="relative"
                       style={{
                         width: `${PREVIEW_CANVAS_WIDTH}px`,
                         transform: `scale(${previewScale})`,
@@ -613,6 +793,12 @@ export default function Home() {
                           {currentConfig.footerText}
                         </p>
                       </div>
+
+                      {currentConfig.updatedAtText && (
+                        <div className="absolute bottom-4 right-9 max-w-[420px] truncate rounded-[6px] border border-white/25 bg-black/60 px-4 py-2 text-[22px] font-semibold text-white/95 shadow-[0_6px_18px_rgba(0,0,0,0.22)] backdrop-blur-[1px]">
+                          {currentConfig.updatedAtText}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

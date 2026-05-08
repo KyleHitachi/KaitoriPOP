@@ -29,7 +29,7 @@ export default function CardGrid({ config, onCardClick, onReorder }: Props) {
 
   const sortedCards = getSortedCards(config);
   const itemIds = useMemo(
-    () => config.sortedOrder.map((_, index) => `card-${index}`),
+    () => config.sortedOrder.map((originalIndex) => `card-${originalIndex}`),
     [config.sortedOrder]
   );
 
@@ -86,7 +86,6 @@ export default function CardGrid({ config, onCardClick, onReorder }: Props) {
             showCardNames={config.showCardNames}
             isP9Row={isP9Row}
             isLotus={isP9Row && col === 0}
-            updatedAtText={config.updatedAtText}
             onClick={() => onCardClick?.(originalIndex)}
           />
         );
@@ -136,7 +135,6 @@ export default function CardGrid({ config, onCardClick, onReorder }: Props) {
             <CardCell
               card={activeCard}
               showCardNames={config.showCardNames}
-              updatedAtText={config.updatedAtText}
             />
           </div>
         )}

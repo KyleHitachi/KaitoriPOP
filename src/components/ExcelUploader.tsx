@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 interface Props {
   onUpload: (file: File) => void;
+  onLoadSample?: () => void;
   loading: boolean;
 }
 
@@ -12,11 +13,12 @@ const COPY = {
   loadingBody:
     "\u30c7\u30fc\u30bf\u3092\u89e3\u6790\u3057\u3066\u7de8\u96c6\u7528\u306e\u30b7\u30fc\u30c8\u3092\u4f5c\u6210\u3057\u3066\u3044\u307e\u3059\u3002",
   title:
-    "\u0045\u0078\u0063\u0065\u006c\u0020\u002f\u0020\u0043\u0053\u0056\u0020\u3092\u8aad\u307f\u8fbc\u3080",
+    "買取表PNGを作成",
   body:
-    "\u30c9\u30e9\u30c3\u30b0\u0026\u30c9\u30ed\u30c3\u30d7\u3001\u307e\u305f\u306f\u30af\u30ea\u30c3\u30af\u3057\u3066\u0020\u0060\u002e\u0078\u006c\u0073\u0078\u0060\u0020\u002f\u0020\u0060\u002e\u0063\u0073\u0076\u0060\u0020\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+    "Excel / CSV をドラッグ&ドロップ、またはクリックして選択してください。",
   badge:
     "\u0060\u002e\u0078\u006c\u0073\u0078\u0060\u0020\u002f\u0020\u0060\u002e\u0063\u0073\u0076\u0060\u0020\u306b\u5bfe\u5fdc",
+  sample: "サンプルCSVで試す",
 };
 
 function isSupportedFile(fileName: string): boolean {
@@ -24,7 +26,7 @@ function isSupportedFile(fileName: string): boolean {
   return lower.endsWith(".xlsx") || lower.endsWith(".csv");
 }
 
-export default function ExcelUploader({ onUpload, loading }: Props) {
+export default function ExcelUploader({ onUpload, onLoadSample, loading }: Props) {
   const [dragOver, setDragOver] = useState(false);
 
   const handleDrop = useCallback(
@@ -51,7 +53,7 @@ export default function ExcelUploader({ onUpload, loading }: Props) {
 
   return (
     <div
-      className={`group cursor-pointer rounded-[24px] border-2 border-dashed p-12 text-center transition-all ${
+      className={`group cursor-pointer rounded-[24px] border-2 border-dashed p-7 text-center transition-all sm:p-12 ${
         dragOver
           ? "border-amber-500 bg-amber-50 shadow-[0_20px_60px_rgba(120,70,5,0.12)]"
           : "border-stone-300 bg-[linear-gradient(180deg,_#fffdf9,_#f8f4ec)] hover:border-stone-400 hover:shadow-[0_20px_60px_rgba(120,70,5,0.08)]"
@@ -84,7 +86,7 @@ export default function ExcelUploader({ onUpload, loading }: Props) {
         </div>
       ) : (
         <div className="flex flex-col items-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-stone-200 bg-white shadow-sm transition group-hover:scale-105">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-stone-200 bg-white shadow-sm transition group-hover:scale-105 sm:h-20 sm:w-20">
             <svg
               className="h-10 w-10 text-stone-500"
               fill="none"
@@ -101,14 +103,28 @@ export default function ExcelUploader({ onUpload, loading }: Props) {
           </div>
 
           <div className="space-y-2">
-            <p className="text-xl font-black tracking-tight text-stone-900">
+            <p className="text-lg font-black tracking-tight text-stone-900 sm:text-xl">
               {COPY.title}
             </p>
             <p className="text-sm text-stone-600">{COPY.body}</p>
           </div>
 
-          <div className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold tracking-[0.18em] text-stone-500">
-            {COPY.badge}
+          <div className="flex flex-col items-center gap-2 sm:flex-row">
+            <div className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold tracking-[0.18em] text-stone-500">
+              {COPY.badge}
+            </div>
+            {onLoadSample && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onLoadSample();
+                }}
+                className="rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700"
+              >
+                {COPY.sample}
+              </button>
+            )}
           </div>
         </div>
       )}

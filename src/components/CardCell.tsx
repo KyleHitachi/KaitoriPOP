@@ -22,10 +22,6 @@ import {
   SET_BADGE_PAD_X,
   SET_BADGE_PAD_Y,
   SET_BADGE_RADIUS,
-  UPDATED_AT_FONT_SIZE,
-  UPDATED_AT_PAD_X,
-  UPDATED_AT_PAD_Y,
-  UPDATED_AT_RADIUS,
 } from "@/lib/layout-tokens";
 
 interface Props {
@@ -33,7 +29,6 @@ interface Props {
   showCardNames?: boolean;
   isP9Row?: boolean;
   isLotus?: boolean;
-  updatedAtText?: string;
   onClick?: () => void;
 }
 
@@ -57,7 +52,6 @@ export default function CardCell({
   showCardNames = false,
   isP9Row,
   isLotus,
-  updatedAtText = "",
   onClick,
 }: Props) {
   const foil = card.foilOverride ?? card.foil;
@@ -67,7 +61,7 @@ export default function CardCell({
 
   return (
     <div
-      className={`group relative flex-1 cursor-pointer ${isLotus ? "cell-lotus-preview" : ""}`}
+      className={`group relative flex-1 cursor-pointer select-none ${isLotus ? "cell-lotus-preview" : ""}`}
       onClick={onClick}
       title={`${card.nameJp} / ${card.nameEn}`}
     >
@@ -89,6 +83,7 @@ export default function CardCell({
           <img
             src={imgSrc}
             alt={card.nameEn}
+            draggable={false}
             className="absolute inset-0 block h-full w-full object-cover transition duration-300 group-hover:scale-[1.015]"
             style={{ filter: "saturate(0.95) contrast(1.03)" }}
             loading="lazy"
@@ -101,19 +96,6 @@ export default function CardCell({
           />
 
           <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/30 via-black/10 to-transparent" />
-
-          {updatedAtText && (
-            <div
-              className="absolute bottom-[8px] right-[8px] z-[4] max-w-[72%] truncate border border-white/20 bg-black/58 font-semibold text-white/92 backdrop-blur-[1px]"
-              style={{
-                borderRadius: `${UPDATED_AT_RADIUS}px`,
-                padding: `${UPDATED_AT_PAD_Y}px ${UPDATED_AT_PAD_X}px`,
-                fontSize: `${UPDATED_AT_FONT_SIZE}px`,
-              }}
-            >
-              {updatedAtText}
-            </div>
-          )}
 
           <div
             className="absolute left-[6px] top-[6px] z-[4] border border-white/80 font-black text-[#4c2208]"

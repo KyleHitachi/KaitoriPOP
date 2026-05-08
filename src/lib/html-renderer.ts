@@ -110,7 +110,6 @@ function buildCardHtml(
     isP9Row: boolean;
     isLotus: boolean;
     showCardNames: boolean;
-    updatedAtText: string;
   }
 ): string {
   const foil = card.foilOverride ?? card.foil;
@@ -131,7 +130,6 @@ function buildCardHtml(
         <div class="frame-inner">
           <img src="${escapeHtml(imgSrc)}" alt="${titleEn}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(fallbackSrc)}';" />
           <div class="frame-top-glow"></div>
-          ${options.updatedAtText ? `<div class="updated-at">${escapeHtml(options.updatedAtText)}</div>` : ""}
           <div class="condition-chip">${escapeHtml(card.condition)}</div>
           ${
             foil
@@ -195,7 +193,6 @@ export function renderBuylistHtml(config: SheetConfig): string {
             isP9Row,
             isLotus: isP9Row && col === 0,
             showCardNames: config.showCardNames,
-            updatedAtText: config.updatedAtText,
           })
         );
       } else {
@@ -239,6 +236,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 .panel {
+  position: relative;
   width: ${PREVIEW_CANVAS_WIDTH}px;
   background: var(--bg-warm);
   background-image: ${SVG_PATTERN};
@@ -418,22 +416,23 @@ body {
   height: 64px;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1), transparent);
 }
-.updated-at {
+.updated-at-global {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
-  z-index: 4;
-  max-width: 72%;
+  right: 36px;
+  bottom: 16px;
+  z-index: 20;
+  max-width: 420px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: ${UPDATED_AT_RADIUS}px;
-  padding: ${UPDATED_AT_PAD_Y}px ${UPDATED_AT_PAD_X}px;
-  background: rgba(0, 0, 0, 0.58);
-  color: rgba(255, 255, 255, 0.92);
-  font-size: ${UPDATED_AT_FONT_SIZE}px;
+  padding: ${UPDATED_AT_PAD_Y * 2}px ${UPDATED_AT_PAD_X * 2}px;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: ${UPDATED_AT_FONT_SIZE * 2}px;
   font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(1px);
 }
 .condition-chip {
@@ -617,6 +616,7 @@ body {
   <div class="ftr">
     <p>${footerHtml}</p>
   </div>
+  ${config.updatedAtText ? `<div class="updated-at-global">${escapeHtml(config.updatedAtText)}</div>` : ""}
 </div>
 </body>
 </html>`;
