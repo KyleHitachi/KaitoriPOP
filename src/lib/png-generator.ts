@@ -23,6 +23,18 @@ export async function generatePng(html: string): Promise<Buffer> {
   try {
     await page.setContent(html, { waitUntil: "domcontentloaded" });
 
+    await page
+      .waitForFunction(
+        () =>
+          document.documentElement.classList.contains("wf-active") ||
+          document.documentElement.classList.contains("wf-inactive"),
+        null,
+        { timeout: 8500 }
+      )
+      .catch(() => undefined);
+
+    await page.evaluate(() => document.fonts?.ready).catch(() => undefined);
+
     await page.evaluate(() =>
       Promise.all(
         Array.from(document.images)

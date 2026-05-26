@@ -1,5 +1,6 @@
 import { GOODGAME_LOGO_DATA_URL } from "./goodgame-logo";
 import { Card } from "./types";
+import { KICKER_FONT_STACK } from "./layout-tokens";
 
 function escapeSvgText(value: string): string {
   return value
@@ -12,6 +13,7 @@ function escapeSvgText(value: string): string {
 
 export function buildCardPlaceholderDataUrl(card: Card): string {
   const title = escapeSvgText(card.nameEn || card.nameJp || "No image");
+  const fontFamily = escapeSvgText(KICKER_FONT_STACK);
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
@@ -44,7 +46,7 @@ export function buildCardPlaceholderDataUrl(card: Card): string {
           preserveAspectRatio="xMidYMid meet"
         />
       </g>
-      <text x="250" y="486" text-anchor="middle" fill="rgba(255,255,255,0.52)" font-size="15" font-family="Segoe UI, Arial, sans-serif" font-weight="700" letter-spacing="4">CARD IMAGE PENDING</text>
+      <text x="250" y="486" text-anchor="middle" fill="rgba(255,255,255,0.52)" font-size="15" font-family="${fontFamily}" font-weight="700" letter-spacing="4">CARD IMAGE PENDING</text>
     </svg>
   `;
 

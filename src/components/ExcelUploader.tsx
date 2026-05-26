@@ -106,12 +106,14 @@ export default function ExcelUploader({ onUpload, onLoadSample, loading }: Props
             <p className="text-lg font-black tracking-tight text-stone-900 sm:text-xl">
               {COPY.title}
             </p>
-            <p className="text-sm text-stone-600">{COPY.body}</p>
+            <p className="text-sm text-stone-600">
+              Excel・CSVをここにドロップ、またはクリックして選択
+            </p>
           </div>
 
           <div className="flex flex-col items-center gap-2 sm:flex-row">
             <div className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold tracking-[0.18em] text-stone-500">
-              {COPY.badge}
+              XLSX / CSV 対応
             </div>
             {onLoadSample && (
               <button

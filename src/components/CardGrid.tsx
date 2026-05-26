@@ -1,32 +1,40 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
   DndContext,
+  CollisionDetection,
   closestCenter,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors,
   DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
 } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import { SheetConfig, GRID_COLS, GRID_ROWS, HIGH_END_SHEET_NAMES } from "@/lib/types";
 import { GRID_GAP, GRID_SIDE_PADDING, ROW_LABEL_GAP } from "@/lib/layout-tokens";
 import { getSortedCards } from "@/lib/sort-engine";
 import SortableCard from "./SortableCard";
-import CardCell from "./CardCell";
 
 interface Props {
   config: SheetConfig;
+  previewScale?: number;
   onCardClick?: (cardIndex: number) => void;
   onReorder?: (newSortedOrder: number[]) => void;
 }
 
-export default function CardGrid({ config, onCardClick, onReorder }: Props) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+const pointerFirstCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args);
+};
 
+export default function CardGrid({
+  config,
+  previewScale = 1,
+  onCardClick,
+  onReorder,
+}: Props) {
   const sortedCards = getSortedCards(config);
   const itemIds = useMemo(
     () => config.sortedOrder.map((originalIndex) => `card-${originalIndex}`),
@@ -39,13 +47,8 @@ export default function CardGrid({ config, onCardClick, onReorder }: Props) {
     })
   );
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveId(String(event.active.id));
-  }, []);
-
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      setActiveId(null);
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
@@ -60,13 +63,6 @@ export default function CardGrid({ config, onCardClick, onReorder }: Props) {
     },
     [config.sortedOrder, itemIds, onReorder]
   );
-
-  const activeCard = useMemo(() => {
-    if (!activeId) return null;
-    const index = itemIds.indexOf(activeId);
-    if (index === -1) return null;
-    return sortedCards[index];
-  }, [activeId, itemIds, sortedCards]);
 
   const rows = [];
   for (let row = 0; row < GRID_ROWS; row++) {
@@ -84,6 +80,10 @@ export default function CardGrid({ config, onCardClick, onReorder }: Props) {
             id={itemIds[index]}
             card={sortedCards[index]}
             showCardNames={config.showCardNames}
+            showExpansionName={config.showExpansionName}
+            showRarityBadge={config.showRarityBadge}
+            showCondition={config.showCondition}
+            previewScale={previewScale}
             isP9Row={isP9Row}
             isLotus={isP9Row && col === 0}
             onClick={() => onCardClick?.(originalIndex)}
@@ -103,10 +103,10 @@ export default function CardGrid({ config, onCardClick, onReorder }: Props) {
             className="flex items-center px-[10px] pb-[6px] pt-[2px]"
             style={{ gap: `${ROW_LABEL_GAP}px` }}
           >
-            <span className="whitespace-nowrap text-[13px] font-bold uppercase tracking-[2px] text-amber-700">
+            <span className="whitespace-nowrap text-[13px] font-bold uppercase tracking-[2px] text-[#8a6b2f]">
               {rowLabel.text}
             </span>
-            <span className="flex-1 h-px bg-gradient-to-r from-amber-600/35 to-transparent" />
+            <span className="h-px flex-1 bg-gradient-to-r from-[#b9953b]/55 to-transparent" />
           </div>
         )}
         <div
@@ -122,23 +122,12 @@ export default function CardGrid({ config, onCardClick, onReorder }: Props) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
+      collisionDetection={pointerFirstCollisionDetection}
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={itemIds} strategy={rectSortingStrategy}>
         <div style={{ padding: `0 ${GRID_SIDE_PADDING}px 8px` }}>{rows}</div>
       </SortableContext>
-      <DragOverlay dropAnimation={null}>
-        {activeCard && (
-          <div className="w-[198px] opacity-90 rotate-1 scale-[1.02]">
-            <CardCell
-              card={activeCard}
-              showCardNames={config.showCardNames}
-            />
-          </div>
-        )}
-      </DragOverlay>
     </DndContext>
   );
 }

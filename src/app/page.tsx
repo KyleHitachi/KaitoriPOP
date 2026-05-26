@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SheetConfig, Card, GRID_TOTAL } from "@/lib/types";
+import {
+  SheetConfig,
+  Card,
+  GRID_TOTAL,
+  DEFAULT_TITLE_SUBTITLE,
+} from "@/lib/types";
 import {
   CTA_BORDER_WIDTH,
   CTA_MIN_WIDTH,
@@ -17,6 +22,7 @@ import {
   TITLE_RULE_HEIGHT,
   TITLE_RULE_WIDTH,
   TITLE_SHELL_WIDTH,
+  TITLE_SUBTITLE_SIZE,
   TITLE_TRACKING,
 } from "@/lib/layout-tokens";
 import ExcelUploader from "@/components/ExcelUploader";
@@ -59,8 +65,7 @@ const COPY = {
     "\u30ab\u30fc\u30c9\u8a2d\u5b9a\u3092\u66f4\u65b0\u3057\u307e\u3057\u305f\u3002",
   reorderUpdated:
     "\u30ab\u30fc\u30c9\u306e\u4e26\u3073\u9806\u3092\u66f4\u65b0\u3057\u307e\u3057\u305f\u3002",
-  appTitle:
-    "\u004d\u0054\u0047\u0020\u8cb7\u53d6\u8868\u30b8\u30a7\u30cd\u30ec\u30fc\u30bf\u30fc",
+  appTitle: "\u0054\u0043\u0047\u0020\u8cb7\u53d6\u8868\u30b8\u30a7\u30cd\u30ec\u30fc\u30bf\u30fc",
   appSubtitle:
     "\u0045\u0078\u0063\u0065\u006c\u0020\u002f\u0020\u0043\u0053\u0056\u0020\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3001\u30ec\u30a4\u30a2\u30a6\u30c8\u3092\u8abf\u6574\u3057\u3001\u305d\u306e\u307e\u307e\u0020\u0050\u004e\u0047\u0020\u306b\u66f8\u304d\u51fa\u305b\u307e\u3059\u3002",
   sheets: "\u30b7\u30fc\u30c8\u6570",
@@ -101,6 +106,8 @@ const COPY = {
   zoom50: "50%",
   zoom75: "75%",
   zoom100: "100%",
+  darkMode: "ダーク",
+  lightMode: "ライト",
 };
 
 function buildNoticeClasses(tone: NoticeTone): string {
@@ -119,6 +126,34 @@ function buildCheckToneClasses(tone: NoticeTone): string {
   return "border-amber-200 bg-amber-50 text-amber-900";
 }
 
+function renderPreviewTitle(title: string) {
+  if (!title.startsWith("MTG")) return title;
+
+  return (
+    <>
+      <span className="text-[#b82020]">MTG</span>
+      <span>{title.slice(3)}</span>
+    </>
+  );
+}
+
+function renderPreviewSubtitle(subtitle: string) {
+  return subtitle.split(/([・/／])/).map((part, index) => {
+    const isSeparator = /[・/／]/.test(part);
+    const colorClass = isSeparator
+      ? "text-[#8a6b2f]"
+      : index % 4 === 0
+        ? "text-[#b82020]"
+        : "text-[#8a6b2f]";
+
+    return (
+      <span key={`${part}-${index}`} className={colorClass}>
+        {part}
+      </span>
+    );
+  });
+}
+
 export default function Home() {
   const [sheets, setSheets] = useState<SheetConfig[]>([]);
   const [activeSheet, setActiveSheet] = useState(0);
@@ -126,6 +161,7 @@ export default function Home() {
   const [editingCardIndex, setEditingCardIndex] = useState<number | null>(null);
   const [generating, setGenerating] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [fitPreviewScale, setFitPreviewScale] = useState(1);
   const [previewZoom, setPreviewZoom] = useState<PreviewZoom>("fit");
   const [previewCanvasHeight, setPreviewCanvasHeight] = useState(
@@ -139,6 +175,26 @@ export default function Home() {
   const previewCanvasRef = useRef<HTMLDivElement | null>(null);
 
   const previewScale = previewZoom === "fit" ? fitPreviewScale : previewZoom;
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("kaitori-pop-theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      return;
+    }
+    if (savedTheme === "light") {
+      setIsDarkMode(false);
+      return;
+    }
+    setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "kaitori-pop-theme",
+      isDarkMode ? "dark" : "light"
+    );
+  }, [isDarkMode]);
 
   const handleUpload = useCallback(async (file: File) => {
     setLoading(true);
@@ -351,6 +407,12 @@ export default function Home() {
   );
 
   const currentConfig = sheets[activeSheet];
+  const titleSubtitle =
+    currentConfig && (currentConfig.showTitleSubtitle ?? true)
+      ? currentConfig.titleSubtitle ?? DEFAULT_TITLE_SUBTITLE
+      : "";
+  const logoGgHeight = currentConfig?.logoGgHeight ?? 96;
+  const logoMtgHeight = currentConfig?.logoMtgHeight ?? 64;
   const totalCards = useMemo(
     () => sheets.reduce((count, sheet) => count + sheet.cards.length, 0),
     [sheets]
@@ -447,8 +509,12 @@ export default function Home() {
   }, [hasSheets, showSettings, currentConfig]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#fff8ec,_#f3efe7_45%,_#ebe5d8_100%)]">
-      <header className="border-b border-stone-200/80 bg-white/85 px-6 py-5 backdrop-blur">
+    <div
+      className={`min-h-screen bg-[radial-gradient(circle_at_top,_#fff8ec,_#f3efe7_45%,_#ebe5d8_100%)] ${
+        isDarkMode ? "app-dark" : ""
+      }`}
+    >
+      <header className="app-header border-b border-stone-200/80 bg-white/85 px-6 py-5 backdrop-blur">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-800">
@@ -462,9 +528,19 @@ export default function Home() {
             </div>
           </div>
 
-          {hasSheets && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-col gap-3 lg:items-end">
+            <button
+              type="button"
+              aria-pressed={isDarkMode}
+              onClick={() => setIsDarkMode((value) => !value)}
+              className="self-start rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 lg:self-end"
+            >
+              {isDarkMode ? COPY.lightMode : COPY.darkMode}
+            </button>
+
+            {hasSheets && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
                 <div className="text-[11px] font-semibold tracking-[0.2em] text-stone-500">
                   {COPY.sheets}
                 </div>
@@ -492,8 +568,9 @@ export default function Home() {
                   {currentConfig?.sheetName}
                 </div>
               </div>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -567,53 +644,21 @@ export default function Home() {
               onSelect={setActiveSheet}
             />
 
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(360px,480px)]">
-              <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { label: COPY.workflowLoad, done: true },
-                    {
-                      label: COPY.workflowImages,
-                      done:
-                        currentConfig.cards.length > 0 &&
-                        fetchedImageCount === currentConfig.cards.length,
-                    },
-                    { label: COPY.workflowAdjust, done: showSettings },
-                    { label: COPY.workflowExport, done: false },
-                  ].map((step, index) => (
-                    <div
-                      key={step.label}
-                      className={`rounded-xl border px-3 py-2 text-center text-xs font-bold ${
-                        step.done
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                          : "border-stone-200 bg-stone-50 text-stone-500"
-                      }`}
-                    >
-                      <div className="text-[10px] opacity-70">STEP {index + 1}</div>
-                      <div>{step.label}</div>
-                    </div>
-                  ))}
-                </div>
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-xs shadow-sm">
+              <div className="mr-2 font-black tracking-[0.14em] text-stone-500">
+                {COPY.checksTitle}
               </div>
-
-              <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                <div className="mb-2 text-xs font-black tracking-[0.16em] text-stone-500">
-                  {COPY.checksTitle}
+              {outputChecks.map((check) => (
+                <div
+                  key={check.label}
+                  className={`rounded-full border px-3 py-1.5 ${buildCheckToneClasses(
+                    check.tone
+                  )}`}
+                >
+                  <span className="font-black">{check.label}: </span>
+                  <span className="font-medium">{check.value}</span>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                  {outputChecks.map((check) => (
-                    <div
-                      key={check.label}
-                      className={`rounded-xl border px-3 py-2 text-xs ${buildCheckToneClasses(
-                        check.tone
-                      )}`}
-                    >
-                      <span className="font-black">{check.label}: </span>
-                      <span className="font-medium">{check.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
 
             <div className="flex flex-col gap-4 xl:flex-row">
@@ -673,10 +718,10 @@ export default function Home() {
 
                 <div
                   ref={previewViewportRef}
-                  className="overflow-auto rounded-[28px] border border-stone-300/70 bg-[#ebe5d8] p-4 shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
+                  className="overflow-auto rounded-[28px] border border-stone-300/70 bg-[#eee7d8] p-4 shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
                 >
                   <div
-                    className="origin-top-left overflow-hidden rounded-[24px] border border-stone-300/60 bg-[#c8c4be] shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
+                    className="origin-top-left overflow-hidden rounded-[24px] border border-[#c8b482]/80 bg-[#f1eadc] shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
                     style={{
                       width: `${Math.round(PREVIEW_CANVAS_WIDTH * previewScale)}px`,
                       height: `${Math.round(previewCanvasHeight * previewScale)}px`,
@@ -684,30 +729,53 @@ export default function Home() {
                   >
                     <div
                       ref={previewCanvasRef}
+                      data-buylist-preview
                       className="relative"
                       style={{
                         width: `${PREVIEW_CANVAS_WIDTH}px`,
                         transform: `scale(${previewScale})`,
                         transformOrigin: "top left",
                         backgroundImage:
-                          'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Crect width=%27120%27 height=%27120%27 fill=%27%23c8c4be%27/%3E%3Cpath d=%27M60 0L120 60L60 120L0 60Z%27 fill=%27%23c5c1bb%27 /%3E%3Cpath d=%27M60 10L110 60L60 110L10 60Z%27 fill=%27none%27 stroke=%27%23cac6c0%27 stroke-width=%270.5%27 /%3E%3C/svg%3E")',
-                        backgroundSize: "120px 120px",
+                          "linear-gradient(135deg, rgba(121,96,53,0.05) 0 1px, transparent 1px 52px), linear-gradient(90deg, rgba(255,255,255,0.45), transparent 42%, rgba(153,118,54,0.08)), linear-gradient(180deg, #f4efe4 0%, #e7dfce 100%)",
+                        backgroundSize: "52px 52px, 100% 100%, 100% 100%",
                       }}
                     >
-                      <div className="flex items-center justify-between gap-6 px-9 pb-[14px] pt-[18px]">
+                      <div className="flex items-center justify-between gap-6 border-b border-[#c5a64a]/70 bg-gradient-to-r from-[#fffaf0]/96 via-[#f3ead8]/96 to-[#fffaf0]/96 px-9 pb-[10px] pt-[12px] shadow-[0_12px_26px_rgba(83,58,20,0.12)]">
                         <div className="flex shrink-0 items-center gap-4">
                           {currentConfig.logoGg ? (
-                            <img src={currentConfig.logoGg} alt="GG" className="h-20" />
+                            <img
+                              src={currentConfig.logoGg}
+                              alt="ロゴ"
+                              style={{ height: `${logoGgHeight}px` }}
+                            />
                           ) : (
-                            <div className="flex h-20 w-20 items-center justify-center rounded-[8px] bg-[#333] text-[24px] font-black text-white">
-                              GG
+                            <div
+                              className="flex items-center justify-center rounded-[8px] border border-[#b9953b]/55 bg-[#fff8e6] font-black text-[#4b3211]"
+                              style={{
+                                width: `${logoGgHeight}px`,
+                                height: `${logoGgHeight}px`,
+                                fontSize: `${Math.max(18, Math.round(logoGgHeight * 0.27))}px`,
+                              }}
+                            >
+                              ロゴ
                             </div>
                           )}
                           {currentConfig.logoMtg ? (
-                            <img src={currentConfig.logoMtg} alt="MTG" className="h-[50px]" />
+                            <img
+                              src={currentConfig.logoMtg}
+                              alt="タイトルロゴ"
+                              style={{ height: `${logoMtgHeight}px` }}
+                            />
                           ) : (
-                            <div className="flex h-[50px] w-[100px] items-center justify-center rounded-[8px] bg-[#333] text-[24px] font-black text-white">
-                              MTG
+                            <div
+                              className="flex items-center justify-center rounded-[8px] border border-[#b9953b]/55 bg-[#fff8e6] font-black text-[#4b3211]"
+                              style={{
+                                width: `${Math.round(logoMtgHeight * 2.25)}px`,
+                                height: `${logoMtgHeight}px`,
+                                fontSize: `${Math.max(16, Math.round(logoMtgHeight * 0.34))}px`,
+                              }}
+                            >
+                              タイトル
                             </div>
                           )}
                         </div>
@@ -718,7 +786,7 @@ export default function Home() {
                             style={{ maxWidth: `${TITLE_SHELL_WIDTH}px` }}
                           >
                             <div
-                              className="mt-2 rounded-full bg-[#d50000]"
+                              className="mt-[6px] rounded-full bg-[#b82020]"
                               style={{
                                 width: `${TITLE_BAR_WIDTH}px`,
                                 height: `${TITLE_BAR_HEIGHT}px`,
@@ -726,7 +794,7 @@ export default function Home() {
                             />
                             <div className="min-w-0 text-left">
                               <div
-                                className="mb-[10px] font-semibold uppercase tracking-[0.34em] text-[#6b6660]"
+                                className="mb-[6px] font-semibold uppercase tracking-[0.34em] text-[#8a6b2f]"
                                 style={{
                                   fontFamily: KICKER_FONT_STACK,
                                   fontSize: `${TITLE_KICKER_SIZE}px`,
@@ -734,18 +802,31 @@ export default function Home() {
                               >
                                 BUYLIST BOARD
                               </div>
-                              <div
-                                className="font-[800] leading-none text-[#1f1f1f]"
-                                style={{
-                                  fontFamily: TITLE_FONT_STACK,
-                                  fontSize: `${TITLE_FONT_SIZE}px`,
-                                  letterSpacing: TITLE_TRACKING,
-                                }}
-                              >
-                                {currentConfig.title}
+                              <div className="flex items-end gap-5">
+                                <div
+                                  className="whitespace-nowrap font-bold leading-none text-[#22201d]"
+                                  style={{
+                                    fontFamily: TITLE_FONT_STACK,
+                                    fontSize: `${TITLE_FONT_SIZE}px`,
+                                    letterSpacing: TITLE_TRACKING,
+                                  }}
+                                >
+                                  {renderPreviewTitle(currentConfig.title)}
+                                </div>
+                                {titleSubtitle && (
+                                  <div
+                                    className="mb-[11px] whitespace-nowrap border-l-[3px] border-[#b82020] pl-4 font-black tracking-[0.16em]"
+                                    style={{
+                                      fontFamily: KICKER_FONT_STACK,
+                                      fontSize: `${TITLE_SUBTITLE_SIZE}px`,
+                                    }}
+                                  >
+                                    {renderPreviewSubtitle(titleSubtitle)}
+                                  </div>
+                                )}
                               </div>
                               <div
-                                className="mt-4 rounded-full bg-[#d50000]"
+                                className="mt-3 rounded-full bg-[#b82020]"
                                 style={{
                                   width: `${TITLE_RULE_WIDTH}px`,
                                   height: `${TITLE_RULE_HEIGHT}px`,
@@ -756,16 +837,16 @@ export default function Home() {
                         </div>
 
                         <div
-                          className="shrink-0 bg-[#1a1714] px-7 py-[14px] text-center"
+                          className="shrink-0 bg-[#1e1b18] px-7 py-[14px] text-center shadow-[0_8px_22px_rgba(62,42,14,0.22)]"
                           style={{
                             minWidth: `${CTA_MIN_WIDTH}px`,
                             borderRadius: `${CTA_RADIUS}px`,
                             borderStyle: "solid",
                             borderWidth: `${CTA_BORDER_WIDTH}px`,
-                            borderColor: "#a8863a",
+                            borderColor: "#c5a64a",
                           }}
                         >
-                          <div className="text-[24px] font-black tracking-[0.04em] text-[#d7bc73]">
+                          <div className="text-[24px] font-black tracking-[0.04em] text-[#f1d27a]">
                             {currentConfig.ctaMain}
                           </div>
                           <div className="mt-1 text-[16px] font-medium text-white/90">
@@ -773,23 +854,15 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
-
-                      <div
-                        className="mx-9 mb-3 h-[3px]"
-                        style={{
-                          background:
-                            "linear-gradient(90deg, transparent, #d7bc73 15%, #a8863a 50%, #d7bc73 85%, transparent)",
-                        }}
-                      />
-
                       <CardGrid
                         config={currentConfig}
+                        previewScale={previewScale}
                         onCardClick={setEditingCardIndex}
                         onReorder={handleReorder}
                       />
 
                       <div className="px-9 pb-4 pt-1 text-center">
-                        <p className="text-[11px] font-bold text-[#2a2520]">
+                        <p className="text-[11px] font-bold text-[#3f3931]">
                           {currentConfig.footerText}
                         </p>
                       </div>
@@ -810,7 +883,7 @@ export default function Home() {
 
               {showSettings && (
                 <div className="w-full xl:w-[360px] xl:flex-shrink-0">
-                  <div className="xl:sticky xl:top-6">
+                  <div className="settings-scroll-panel xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-2">
                     <SettingsPanel
                       config={currentConfig}
                       onChange={handleConfigUpdate}

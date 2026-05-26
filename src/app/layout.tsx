@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import TypekitLoader from "@/components/TypekitLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MTG Buylist Generator",
-  description: "Create MTG buylist images from Excel files",
+  title: "TCG 買取表ジェネレーター",
+  description: "Create TCG buylist images from Excel and CSV files",
 };
 
 export default function RootLayout({
@@ -12,8 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <body className="antialiased">{children}</body>
+    <html lang="ja" suppressHydrationWarning>
+      <body className="antialiased">
+        <TypekitLoader />
+        {children}
+      </body>
     </html>
   );
 }

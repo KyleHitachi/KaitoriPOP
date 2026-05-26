@@ -4,17 +4,22 @@ export interface Card {
   nameJp: string;
   nameEn: string;
   set: string;
+  rarity: string;
   lang: string;
   condition: string;
   priceJp: number | null;
   priceEn: number | null;
+  priceJpLabel?: string;
+  priceEnLabel?: string;
   category: string;
   notes: string | null;
   imageUrl: string;
   foil: boolean;
+  foilLabel?: string;
   isLand: boolean;
   priceOverride?: string;
   setLabelOverride?: string;
+  rarityOverride?: string;
   foilOverride?: boolean;
   landOverride?: boolean;
   imageData?: string;
@@ -29,12 +34,19 @@ export interface RowLabel {
 export interface SheetConfig {
   sheetName: string;
   title: string;
+  titleSubtitle?: string;
+  showTitleSubtitle?: boolean;
   cards: Card[];
   sortedOrder: number[];
   rowLabels: RowLabel[];
   showCardNames: boolean;
+  showExpansionName: boolean;
+  showRarityBadge: boolean;
+  showCondition: boolean;
   logoGg?: string;
   logoMtg?: string;
+  logoGgHeight?: number;
+  logoMtgHeight?: number;
   ctaMain: string;
   ctaSub: string;
   footerText: string;
@@ -47,6 +59,7 @@ export const DEFAULT_CTA_SUB = "店頭でそのまま査定できます";
 export const DEFAULT_FOOTER =
   "* 掲載価格は参考価格です。在庫状況やカード状態により変動します。";
 export const DEFAULT_UPDATED_AT_TEXT = "";
+export const DEFAULT_TITLE_SUBTITLE = "モダン・レガシー";
 
 export const GRID_COLS = 9;
 export const GRID_ROWS = 4;

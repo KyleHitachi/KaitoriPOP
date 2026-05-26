@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseExcel } from "@/lib/excel-parser";
-import { sortSheet } from "@/lib/sort-engine";
 
 export const runtime = "nodejs";
 
@@ -36,10 +35,9 @@ export async function POST(request: NextRequest) {
 
     const buffer = await file.arrayBuffer();
     const parseResult = parseExcel(buffer, file.name);
-    const sortedSheets = parseResult.sheets.map((config) => sortSheet(config));
 
     return NextResponse.json({
-      sheets: sortedSheets,
+      sheets: parseResult.sheets,
       warnings: parseResult.warnings,
     });
   } catch (error) {

@@ -24,6 +24,9 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
   const [setLabelOverride, setSetLabelOverride] = useState(
     card.setLabelOverride || ""
   );
+  const [rarityOverride, setRarityOverride] = useState(
+    card.rarityOverride || ""
+  );
   const [foilOverride, setFoilOverride] = useState<boolean | undefined>(
     card.foilOverride
   );
@@ -34,6 +37,7 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
   useEffect(() => {
     setPriceOverride(card.priceOverride || "");
     setSetLabelOverride(card.setLabelOverride || "");
+    setRarityOverride(card.rarityOverride || "");
     setFoilOverride(card.foilOverride);
     setLandOverride(card.landOverride);
   }, [card]);
@@ -50,6 +54,7 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
   const metaItems = useMemo(
     () => [
       { label: "セット", value: card.set || "-" },
+      { label: "レアリティ", value: card.rarity || "-" },
       { label: "言語", value: card.lang || "-" },
       { label: "状態", value: card.condition || "-" },
       { label: "JP価格", value: formatPrice(card.priceJp) },
@@ -62,6 +67,7 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
     onSave({
       priceOverride: priceOverride || undefined,
       setLabelOverride: setLabelOverride || undefined,
+      rarityOverride: rarityOverride || undefined,
       foilOverride,
       landOverride,
     });
@@ -156,6 +162,19 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
                   value={setLabelOverride}
                   onChange={(event) => setSetLabelOverride(event.target.value)}
                   placeholder="例: IT / LEG"
+                  className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-stone-700">
+                  レアリティ表示の上書き
+                </label>
+                <input
+                  type="text"
+                  value={rarityOverride}
+                  onChange={(event) => setRarityOverride(event.target.value)}
+                  placeholder="例: エンチャンテッド / Legendary"
                   className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                 />
               </div>
