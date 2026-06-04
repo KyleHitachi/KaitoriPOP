@@ -38,10 +38,10 @@ export const CARD_CONTENT_TOP_WITH_NAMES = 26;
 export const CARD_NAME_BLOCK_MARGIN = 8;
 
 export const CONDITION_CHIP_SHADOW = "0 1px 3px rgba(0, 0, 0, 0.2)";
-export const CONDITION_CHIP_FONT_SIZE = 14;
-export const CONDITION_CHIP_RADIUS = 6;
-export const CONDITION_CHIP_PAD_Y = 4;
-export const CONDITION_CHIP_PAD_X = 10;
+export const CONDITION_CHIP_FONT_SIZE = 18;
+export const CONDITION_CHIP_RADIUS = 7;
+export const CONDITION_CHIP_PAD_Y = 5;
+export const CONDITION_CHIP_PAD_X = 12;
 
 export const SET_BADGE_FONT_SIZE = 14;
 export const SET_BADGE_RADIUS = 6;

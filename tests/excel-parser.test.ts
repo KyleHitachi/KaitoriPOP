@@ -311,6 +311,28 @@ test("parseExcel reads UTF-8 csv files without dropping the first row", () => {
   assert.equal(result.sheets[0].cards[1].nameJp, "意志の力");
 });
 
+test("parseExcel reads wanted CSV headers with SP price suffixes", () => {
+  const buffer = encodeUtf8(
+    [
+      "No,\u63b2\u51fa\u30ab\u30c6\u30b4\u30ea,\u65e5\u672c\u8a9e\u540d,\u82f1\u8a9e\u540d,\u30bb\u30c3\u30c8,\u8a00\u8a9e,\u72b6\u614b,JP\u4fa1\u683c SP,EN\u4fa1\u683c SP,\u4ed6\u8a00\u8a9e\u4fa1\u683c SP,\u753b\u50cfURL,\u4fa1\u683c\u53c2\u7167URL,\u4fee\u6b63\u30e1\u30e2",
+      "1,\u8d85\u30cf\u30a4\u30a8\u30f3\u30c9 / Power9,Black Lotus,Black Lotus,2ED,EN,SP,,,,https://api.scryfall.com/cards/named?exact=Black+Lotus&format=image&version=normal&set=2ed,https://www.hareruyamtg.com/ja/purchase/detail/1282,",
+      "2,\u8d85\u30cf\u30a4\u30a8\u30f3\u30c9 / Power9,Ancestral Recall,Ancestral Recall,2ED,EN,SP,,,,https://api.scryfall.com/cards/named?exact=Ancestral+Recall&format=image&version=normal&set=2ed,https://www.hareruyamtg.com/ja/purchase/detail/1470,\u8981\u78ba\u8a8d",
+    ].join("\n")
+  );
+
+  const result = parseExcel(buffer, "wanted.csv");
+
+  assert.equal(result.sheets[0].cards.length, 2);
+  assert.equal(result.sheets[0].cards[0].no, 1);
+  assert.equal(result.sheets[0].cards[0].nameEn, "Black Lotus");
+  assert.equal(result.sheets[0].cards[0].category, "\u8d85\u30cf\u30a4\u30a8\u30f3\u30c9 / Power9");
+  assert.equal(
+    result.sheets[0].cards[0].imageUrl,
+    "https://api.scryfall.com/cards/named?exact=Black+Lotus&format=image&version=normal&set=2ed"
+  );
+  assert.equal(result.sheets[0].cards[1].notes, "\u8981\u78ba\u8a8d");
+});
+
 test("parseExcel warns when more than 36 cards are provided", () => {
   const rows: unknown[][] = [
     ["No", "日本語名", "英語名", "セット", "言語", "状態", "JP価格", "EN価格", "カテゴリ", "備考", "画像URL"],

@@ -75,8 +75,13 @@ const HEADER_ALIASES: Record<CardField, string[]> = {
     "Cold Foil",
     "\u30b3\u30fc\u30eb\u30c9\u30d5\u30a9\u30a4\u30eb",
   ],
-  category: ["\u30ab\u30c6\u30b4\u30ea", "\u30ab\u30c6\u30b4\u30ea\u30fc", "Category"],
-  notes: ["\u5099\u8003", "\u30e1\u30e2", "Notes", "Note"],
+  category: [
+    "\u30ab\u30c6\u30b4\u30ea",
+    "\u30ab\u30c6\u30b4\u30ea\u30fc",
+    "\u63b2\u51fa\u30ab\u30c6\u30b4\u30ea",
+    "Category",
+  ],
+  notes: ["\u5099\u8003", "\u30e1\u30e2", "\u4fee\u6b63\u30e1\u30e2", "Notes", "Note"],
   imageUrl: ["\u753b\u50cfURL", "Image URL", "ImageURL"],
 };
 
@@ -220,7 +225,20 @@ function findAliasField(header: string): CardField | null {
     CardField,
     string[],
   ][]) {
-    if (aliases.some((alias) => normalize(alias) === normalizedHeader)) {
+    if (
+      aliases.some((alias) => {
+        const normalizedAlias = normalize(alias);
+        if (normalizedAlias === normalizedHeader) return true;
+
+        if (field !== "priceJp" && field !== "priceEn") return false;
+        if (!normalizedHeader.startsWith(normalizedAlias)) return false;
+
+        const qualifier = normalizedHeader.slice(normalizedAlias.length);
+        return /^(sp|nm|lp|mp|hp|dm|pld|poor|foil|nonfoil|nf|rf|cf)$/i.test(
+          qualifier
+        );
+      })
+    ) {
       return field;
     }
   }

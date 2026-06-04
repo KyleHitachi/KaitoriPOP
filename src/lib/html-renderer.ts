@@ -88,6 +88,7 @@ function buildSinglePriceLabel(card: Card): string | null {
 
 function buildSetLabel(card: Card): string {
   if (card.setLabelOverride) return card.setLabelOverride;
+  if (card.set.trim().toUpperCase() === "FBB") return "FBB";
   const primaryLang = card.lang.includes("/") ? card.lang.split("/")[0] : card.lang;
   if (isFabCard(card)) return `${primaryLang || "EN"} / ${card.set}`;
   if (card.lang === "JP/EN" || card.lang === "JP") return card.set;
