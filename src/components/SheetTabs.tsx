@@ -9,29 +9,34 @@ interface Props {
 }
 
 export default function SheetTabs({ sheets, activeIndex, onSelect }: Props) {
+  // A single sheet needs no switcher; the row would only take space.
+  if (sheets.length < 2) return null;
+
   return (
-    <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white p-2 shadow-sm">
-      <div className="flex min-w-max gap-2">
-        {sheets.map((sheet, index) => (
-          <button
-            key={sheet.sheetName}
-            onClick={() => onSelect(index)}
-            className={`rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${
-              index === activeIndex
-                ? "bg-stone-900 text-white shadow-sm"
-                : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
-            }`}
-          >
-            <div>{sheet.sheetName}</div>
-            <div
-              className={`mt-1 text-xs ${
-                index === activeIndex ? "text-stone-300" : "text-stone-400"
+    <div className="overflow-x-auto">
+      <div role="tablist" aria-label="シート" className="flex min-w-max gap-1.5">
+        {sheets.map((sheet, index) => {
+          const isActive = index === activeIndex;
+          return (
+            <button
+              key={`${sheet.sheetName}-${index}`}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onSelect(index)}
+              className={`flex items-baseline gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
+                isActive
+                  ? "border-stone-900 bg-stone-900 text-white shadow-sm"
+                  : "border-stone-300 bg-white text-stone-600 hover:border-stone-400 hover:text-stone-900"
               }`}
             >
-              {sheet.cards.length} cards
-            </div>
-          </button>
-        ))}
+              <span>{sheet.sheetName}</span>
+              <span className={`text-xs ${isActive ? "text-stone-300" : "text-stone-400"}`}>
+                {sheet.cards.length}枚
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   CollisionDetection,
@@ -15,7 +15,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Card, SheetConfig } from "@/lib/types";
+import { Card, GRID_COLS, SheetConfig } from "@/lib/types";
 import { PREVIEW_CANVAS_HEIGHT, PREVIEW_CANVAS_WIDTH } from "@/lib/layout-tokens";
 import { renderBuylistHtml } from "@/lib/html-renderer";
 import { resolveCardImageSrc } from "@/lib/card-image";
@@ -23,6 +23,7 @@ import { getSortedCards } from "@/lib/sort-engine";
 
 interface Props {
   config: SheetConfig;
+  scale?: number;
   onCardClick?: (cardIndex: number) => void;
   onReorder?: (newSortedOrder: number[]) => void;
 }
@@ -81,14 +82,44 @@ function measureCells(doc: Document): CellRect[] {
   );
 }
 
+function describeOverrides(card: Card): string[] {
+  const overrides: string[] = [];
+  if (card.priceOverride) overrides.push("価格");
+  if (card.setLabelOverride) overrides.push("セット表記");
+  if (card.rarityOverride) overrides.push("レアリティ");
+  if (card.foilOverride !== undefined) overrides.push("Foil");
+  if (card.landOverride !== undefined) overrides.push("Land");
+  return overrides;
+}
+
+function describeImageStatus(card: Card): string {
+  if (card.imageData || card.imageStatus === "ok") return "画像OK";
+  if (card.imageStatus === "failed") return "取得失敗";
+  if (card.imageStatus === "none") return "画像URLなし";
+  return "画像未確認";
+}
+
+const MOVE_KEYS: Record<string, number> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -GRID_COLS,
+  ArrowDown: GRID_COLS,
+};
+
+// The overlay lives inside the scaled preview, so on-card UI is sized by
+// 1/scale to stay readable at "全体" (about 50%).
 function CellTarget({
   rect,
   card,
+  scale,
   onClick,
+  onMove,
 }: {
   rect: CellRect;
   card: Card;
+  scale: number;
   onClick: () => void;
+  onMove: (delta: number) => void;
 }) {
   const id = cellId(rect.sortedIndex);
   const draggable = useDraggable({ id });
@@ -103,44 +134,90 @@ function CellTarget({
     [setDragRef, setDropRef]
   );
   const isDropTarget = droppable.isOver && !draggable.isDragging;
+  const ui = (px: number) => px / Math.max(scale, 0.2);
+  const overrides = describeOverrides(card);
+  const name = card.nameJp || card.nameEn;
+  const badgeStyle = {
+    fontSize: ui(11),
+    padding: `${ui(3)}px ${ui(7)}px`,
+    borderRadius: ui(6),
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      onClick();
+      return;
+    }
+    const delta = MOVE_KEYS[event.key];
+    if (event.altKey && delta !== undefined) {
+      event.preventDefault();
+      onMove(delta);
+    }
+  };
 
   return (
     <div
       ref={setRefs}
+      data-cell-index={rect.sortedIndex}
       onClick={onClick}
-      className={`group/card absolute rounded-[9px] transition ${
+      onKeyDown={handleKeyDown}
+      className={`group/card absolute rounded-[9px] transition focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] ${
         draggable.isDragging ? "cursor-grabbing bg-white/55" : "cursor-grab"
-      } ${isDropTarget ? "outline outline-[4px] outline-offset-2 outline-[#b82020]" : ""}`}
+      } ${isDropTarget ? "outline outline-offset-2 outline-[#b82020]" : ""}`}
       style={{
         left: rect.left,
         top: rect.top,
         width: rect.width,
         height: rect.height,
         touchAction: "none",
+        outlineWidth: ui(3),
       }}
       {...draggable.attributes}
       {...draggable.listeners}
+      aria-label={`${rect.sortedIndex + 1}番目: ${name}${
+        overrides.length > 0 ? `（${overrides.join("・")}を修正済み）` : ""
+      }。Enterで編集、Alt+矢印キーで移動`}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute right-[7px] top-[7px] rounded-[6px] border border-white/70 bg-stone-950/70 px-2.5 py-1.5 text-[10px] font-black tracking-[0.08em] text-white opacity-0 shadow-sm transition group-hover/card:opacity-100">
-        DRAG
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute flex flex-col items-end opacity-0 transition group-hover/card:opacity-100 group-focus-visible/card:opacity-100"
+        style={{ right: ui(6), top: ui(6), gap: ui(4) }}
+      >
+        <div
+          className="border border-white/70 bg-stone-950/75 font-black tracking-[0.06em] text-white shadow-sm"
+          style={badgeStyle}
+        >
+          ドラッグで移動
+        </div>
+        <div
+          className="border border-white/60 bg-white/90 font-bold text-stone-700 shadow-sm"
+          style={badgeStyle}
+        >
+          {describeImageStatus(card)}
+        </div>
       </div>
-      <div aria-hidden="true" className="pointer-events-none absolute right-[7px] top-[40px] rounded-[6px] border border-white/60 bg-white/90 px-2 py-1 text-[10px] font-bold text-stone-700 opacity-0 shadow-sm transition group-hover/card:opacity-100">
-        {card.imageData || card.imageStatus === "ok"
-          ? "画像OK"
-          : card.imageStatus === "failed"
-            ? "取得失敗"
-            : card.imageStatus === "none"
-              ? "画像URLなし"
-              : "画像未確認"}
-      </div>
-      <div aria-hidden="true" className="pointer-events-none absolute bottom-[7px] left-[7px] rounded-[6px] border border-white/60 bg-white/90 px-2 py-1 text-[10px] font-bold text-stone-700 opacity-0 shadow-sm transition group-hover/card:opacity-100">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute border border-white/60 bg-white/90 font-bold text-stone-700 opacity-0 shadow-sm transition group-hover/card:opacity-100 group-focus-visible/card:opacity-100"
+        style={{ ...badgeStyle, left: ui(6), bottom: ui(6) }}
+      >
         クリックで編集
       </div>
+      {overrides.length > 0 && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute border border-amber-200 bg-amber-400 font-black text-stone-950 shadow-sm"
+          style={{ ...badgeStyle, right: ui(6), bottom: ui(6) }}
+        >
+          修正済み
+        </div>
+      )}
     </div>
   );
 }
 
-export default function BuylistPreview({ config, onCardClick, onReorder }: Props) {
+export default function BuylistPreview({ config, scale = 1, onCardClick, onReorder }: Props) {
   const html = useMemo(() => renderBuylistHtml(config), [config]);
   const sortedCards = useMemo(() => getSortedCards(config), [config]);
   // srcDoc is fixed at mount; later changes are patched in place.
@@ -202,14 +279,9 @@ export default function BuylistPreview({ config, onCardClick, onReorder }: Props
     setActiveIndex(parseCellId(event.active.id));
   }, []);
 
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      setActiveIndex(null);
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
-
-      const oldIndex = parseCellId(active.id);
-      const newIndex = parseCellId(over.id);
+  const moveCard = useCallback(
+    (oldIndex: number, newIndex: number) => {
+      if (oldIndex === newIndex) return;
       const newOrder = [...config.sortedOrder];
       const [moved] = newOrder.splice(oldIndex, 1);
       newOrder.splice(newIndex, 0, moved);
@@ -217,6 +289,40 @@ export default function BuylistPreview({ config, onCardClick, onReorder }: Props
     },
     [config.sortedOrder, onReorder]
   );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveIndex(null);
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      moveCard(parseCellId(active.id), parseCellId(over.id));
+    },
+    [moveCard]
+  );
+
+  // Keyboard moves keep focus on the card that moved.
+  const pendingFocusRef = useRef<number | null>(null);
+  const handleKeyboardMove = useCallback(
+    (sortedIndex: number, delta: number) => {
+      const target = Math.min(
+        Math.max(sortedIndex + delta, 0),
+        config.sortedOrder.length - 1
+      );
+      if (target === sortedIndex) return;
+      pendingFocusRef.current = target;
+      moveCard(sortedIndex, target);
+    },
+    [config.sortedOrder.length, moveCard]
+  );
+
+  useEffect(() => {
+    if (pendingFocusRef.current === null) return;
+    const target = document.querySelector<HTMLElement>(
+      `[data-cell-index="${pendingFocusRef.current}"]`
+    );
+    pendingFocusRef.current = null;
+    target?.focus();
+  }, [cellRects]);
 
   const activeCard = activeIndex === null ? null : sortedCards[activeIndex];
 
@@ -247,7 +353,9 @@ export default function BuylistPreview({ config, onCardClick, onReorder }: Props
                 key={cellId(rect.sortedIndex)}
                 rect={rect}
                 card={card}
+                scale={scale}
                 onClick={() => onCardClick?.(config.sortedOrder[rect.sortedIndex])}
+                onMove={(delta) => handleKeyboardMove(rect.sortedIndex, delta)}
               />
             );
           })}

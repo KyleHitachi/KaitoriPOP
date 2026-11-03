@@ -292,75 +292,6 @@ export default function SettingsPanel({ config, onChange }: Props) {
         </p>
       </div>
 
-      <Section
-        title="プリセット"
-        summary="タイトル、文言、ロゴ、表示設定を保存して別シートへ呼び出せます。"
-      >
-        <div className="settings-preset-card rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
-          <label className="settings-preset-label mb-1 block text-sm font-bold text-stone-800">
-            保存名
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={presetName}
-              onChange={(event) => setPresetName(event.target.value)}
-              placeholder="例: ロルカナ標準"
-              className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-            />
-            <button
-              type="button"
-              onClick={savePreset}
-              className="shrink-0 rounded-xl bg-stone-900 px-4 py-2 text-sm font-black text-white transition hover:bg-stone-800"
-            >
-              保存
-            </button>
-          </div>
-
-          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-            <select
-              value={selectedPresetId}
-              onChange={(event) => setSelectedPresetId(event.target.value)}
-              className="min-w-0 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-            >
-              <option value="">プリセットを選択</option>
-              {presets.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={applyPreset}
-              className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 transition hover:bg-stone-50"
-            >
-              呼び出し
-            </button>
-          </div>
-
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <p className="settings-preset-help text-xs leading-relaxed text-stone-700">
-              カード、価格、並び順は保存せず、買取表の見た目だけをコピーします。
-            </p>
-            <button
-              type="button"
-              onClick={deletePreset}
-              disabled={!selectedPresetId}
-              className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              削除
-            </button>
-          </div>
-
-          {presetMessage && (
-            <div className="settings-preset-message mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900">
-              {presetMessage}
-            </div>
-          )}
-        </div>
-      </Section>
-
       <Section title="基本情報" summary="タイトル、CTA、更新日の表示を調整します。">
         <div>
           <label className="mb-1 block text-sm font-medium text-stone-700">
@@ -687,6 +618,76 @@ export default function SettingsPanel({ config, onChange }: Props) {
               </div>
             );
           })}
+        </div>
+      </Section>
+
+      <Section
+        title="プリセット"
+        summary="タイトル、文言、ロゴ、表示設定を保存して別シートへ呼び出せます。"
+        defaultOpen={false}
+      >
+        <div className="settings-preset-card rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
+          <label className="settings-preset-label mb-1 block text-sm font-bold text-stone-800">
+            保存名
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={presetName}
+              onChange={(event) => setPresetName(event.target.value)}
+              placeholder="例: ロルカナ標準"
+              className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            />
+            <button
+              type="button"
+              onClick={savePreset}
+              className="shrink-0 rounded-xl bg-stone-900 px-4 py-2 text-sm font-black text-white transition hover:bg-stone-800"
+            >
+              保存
+            </button>
+          </div>
+
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <select
+              value={selectedPresetId}
+              onChange={(event) => setSelectedPresetId(event.target.value)}
+              className="min-w-0 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            >
+              <option value="">プリセットを選択</option>
+              {presets.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={applyPreset}
+              className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 transition hover:bg-stone-50"
+            >
+              呼び出し
+            </button>
+          </div>
+
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <p className="settings-preset-help text-xs leading-relaxed text-stone-700">
+              カード、価格、並び順は保存せず、買取表の見た目だけをコピーします。
+            </p>
+            <button
+              type="button"
+              onClick={deletePreset}
+              disabled={!selectedPresetId}
+              className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              削除
+            </button>
+          </div>
+
+          {presetMessage && (
+            <div className="settings-preset-message mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900">
+              {presetMessage}
+            </div>
+          )}
         </div>
       </Section>
     </div>

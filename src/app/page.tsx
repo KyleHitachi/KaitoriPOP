@@ -13,6 +13,7 @@ import CardEditor from "@/components/CardEditor";
 import SettingsPanel from "@/components/SettingsPanel";
 import OverflowCardList from "@/components/OverflowCardList";
 import { swapInOverflowCard } from "@/lib/overflow";
+import { EditHistory } from "@/lib/edit-history";
 import {
   SavedWork,
   buildSavedWork,
@@ -82,7 +83,7 @@ const COPY = {
   exportPng: "PNGを書き出し",
   generating: "生成中...",
   helper:
-    "ドラッグで並び替え、カードをクリックして個別設定、右側の設定でタイトルやロゴを調整できます。",
+    "ドラッグで並び替え、カードをクリックして個別設定。キーボードでは Tab でカードを選び、Enter で編集、Alt+矢印で移動、Ctrl+Z で元に戻せます。",
   sampleError: "サンプルCSVの読み込みに失敗しました。",
   checksTitle: "出力前チェック",
   zoomFit: "全体",
@@ -206,6 +207,12 @@ export default function Home() {
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const previewCanvasRef = useRef<HTMLDivElement | null>(null);
   const workFileInputRef = useRef<HTMLInputElement | null>(null);
+  const historyRef = useRef(new EditHistory<SheetConfig[]>());
+  const previousSheetsRef = useRef<SheetConfig[]>(sheets);
+  // How the next sheets change is treated: a user edit ("record"), a
+  // background update or undo/redo itself ("skip"), or a new board ("reset").
+  const historyModeRef = useRef<"record" | "skip" | "reset">("record");
+  const [, setHistoryVersion] = useState(0);
 
   const previewScale = previewZoom === "fit" ? fitPreviewScale : previewZoom;
 
@@ -236,7 +243,61 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [notice, generating, loading]);
 
+  useEffect(() => {
+    const previous = previousSheetsRef.current;
+    previousSheetsRef.current = sheets;
+    if (previous === sheets) return;
+
+    const mode = historyModeRef.current;
+    historyModeRef.current = "record";
+    if (mode === "reset" || previous.length === 0 || sheets.length === 0) {
+      historyRef.current.clear();
+    } else if (mode === "record") {
+      historyRef.current.record(previous);
+    }
+    setHistoryVersion((version) => version + 1);
+  }, [sheets]);
+
+  const handleUndo = useCallback(() => {
+    const previous = historyRef.current.undo(sheets);
+    if (!previous) return;
+    historyModeRef.current = "skip";
+    setSheets(previous);
+    setActiveSheet((index) => Math.min(index, previous.length - 1));
+    setNotice({ tone: "info", message: "1つ前の状態に戻しました。" });
+  }, [sheets]);
+
+  const handleRedo = useCallback(() => {
+    const next = historyRef.current.redo(sheets);
+    if (!next) return;
+    historyModeRef.current = "skip";
+    setSheets(next);
+    setActiveSheet((index) => Math.min(index, next.length - 1));
+    setNotice({ tone: "info", message: "取り消した操作をやり直しました。" });
+  }, [sheets]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      // Text fields keep their own native undo.
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+
+      const key = event.key.toLowerCase();
+      if (key === "z" && !event.shiftKey) {
+        event.preventDefault();
+        handleUndo();
+      } else if ((key === "z" && event.shiftKey) || key === "y") {
+        event.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleRedo, handleUndo]);
+
   const applySavedWork = useCallback((work: SavedWork, message: string) => {
+    historyModeRef.current = "reset";
     setSheets(work.sheets);
     setActiveSheet(work.activeSheet);
     setShowSettings(true);
@@ -340,6 +401,7 @@ export default function Home() {
               .map((warning: { sheetName: string; message: string }) => `${warning.sheetName}: ${warning.message}`)
               .join(" / ")}`
           : "";
+      historyModeRef.current = "reset";
       setSheets(data.sheets);
       setActiveSheet(0);
       setShowSettings(data.sheets.length > 0);
@@ -388,6 +450,7 @@ export default function Home() {
 
     try {
       const checked = await ensureSheetImages(config, true);
+      historyModeRef.current = "skip";
       setSheets((current) =>
         current.map((sheet, index) => (index === activeSheet ? checked : sheet))
       );
@@ -423,6 +486,7 @@ export default function Home() {
     try {
       const finalConfig = await ensureSheetImages(config);
       if (finalConfig !== config) {
+        historyModeRef.current = "skip";
         setSheets((current) =>
           current.map((sheet, index) => (index === activeSheet ? finalConfig : sheet))
         );
@@ -468,6 +532,7 @@ export default function Home() {
         const finalConfig = await ensureSheetImages(config);
         if (finalConfig !== config) {
           // Keep the checked statuses so later exports skip those cards.
+          historyModeRef.current = "skip";
           setSheets((current) =>
             current.map((sheet, sheetIndex) => (sheetIndex === index ? finalConfig : sheet))
           );
@@ -883,6 +948,26 @@ export default function Home() {
                       </button>
                     ))}
                   </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={handleUndo}
+                      disabled={!historyRef.current.canUndo}
+                      title="元に戻す（Ctrl+Z）"
+                      className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ↶ 元に戻す
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRedo}
+                      disabled={!historyRef.current.canRedo}
+                      title="やり直す（Ctrl+Shift+Z）"
+                      className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ↷ やり直す
+                    </button>
+                  </div>
                   <div className="ml-auto flex flex-wrap items-center gap-2">
                     <button
                       type="button"
@@ -938,6 +1023,7 @@ export default function Home() {
                     >
                       <BuylistPreview
                         config={currentConfig}
+                        scale={previewScale}
                         onCardClick={setEditingCardIndex}
                         onReorder={handleReorder}
                       />

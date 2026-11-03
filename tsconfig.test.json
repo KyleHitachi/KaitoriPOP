@@ -24,6 +24,7 @@
     "src/lib/zip.ts",
     "src/lib/overflow.ts",
     "src/lib/image-fetcher.ts",
+    "src/lib/edit-history.ts",
     "tests/**/*.ts"
   ],
   "exclude": ["node_modules", ".next", ".next-build"]
