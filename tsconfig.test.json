@@ -21,6 +21,7 @@
     "src/lib/sort-engine.ts",
     "src/lib/types.ts",
     "src/lib/work-storage.ts",
+    "src/lib/zip.ts",
     "tests/**/*.ts"
   ],
   "exclude": ["node_modules", ".next", ".next-build"]
