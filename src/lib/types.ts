@@ -1,4 +1,5 @@
 import type { ThemeId } from "./themes";
+import type { OutputSizeId } from "./output-sizes";
 
 // "none": no image URL, so the renderer uses the placeholder.
 export type ImageStatus = "ok" | "failed" | "none";
@@ -43,6 +44,8 @@ export interface SheetConfig {
   // Look and game conventions; absent on boards saved before themes, which
   // render with the classic palette.
   theme?: ThemeId;
+  // Absent means the original landscape monitor board.
+  outputSize?: OutputSizeId;
   title: string;
   titleSubtitle?: string;
   showTitleSubtitle?: boolean;

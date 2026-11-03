@@ -13,10 +13,10 @@ async function getBrowser(): Promise<Browser> {
   return browserInstance;
 }
 
-export async function generatePng(html: string): Promise<Buffer> {
+export async function generatePng(html: string, width = 1920): Promise<Buffer> {
   const browser = await getBrowser();
   const page = await browser.newPage({
-    viewport: { width: 1920, height: 1200 },
+    viewport: { width, height: 1200 },
     deviceScaleFactor: 2,
   });
 
@@ -47,6 +47,10 @@ export async function generatePng(html: string): Promise<Buffer> {
               })
           )
       )
+    );
+
+    await page.evaluate(() =>
+      (window as Window & { __fitPanel?: () => void }).__fitPanel?.()
     );
 
     const screenshot = await page.screenshot({
