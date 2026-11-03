@@ -8,12 +8,16 @@ export async function POST(request: NextRequest) {
     const body: { config: SheetConfig } = await request.json();
     const { config } = body;
 
-    const [{ renderBuylistHtml }, { generatePng }] = await Promise.all([
+    const [{ renderBuylistHtml }, { generatePng }, { embedCardImages }] = await Promise.all([
       import("@/lib/html-renderer"),
       import("@/lib/png-generator"),
+      import("@/lib/image-fetcher"),
     ]);
 
-    const html = renderBuylistHtml(config);
+    const html = renderBuylistHtml({
+      ...config,
+      cards: await embedCardImages(config.cards),
+    });
     const pngBuffer = await generatePng(html);
 
     return new NextResponse(new Uint8Array(pngBuffer), {

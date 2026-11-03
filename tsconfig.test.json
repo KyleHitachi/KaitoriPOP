@@ -23,6 +23,7 @@
     "src/lib/work-storage.ts",
     "src/lib/zip.ts",
     "src/lib/overflow.ts",
+    "src/lib/image-fetcher.ts",
     "tests/**/*.ts"
   ],
   "exclude": ["node_modules", ".next", ".next-build"]

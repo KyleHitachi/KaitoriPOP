@@ -125,7 +125,13 @@ function CellTarget({
         DRAG
       </div>
       <div aria-hidden="true" className="pointer-events-none absolute right-[7px] top-[40px] rounded-[6px] border border-white/60 bg-white/90 px-2 py-1 text-[10px] font-bold text-stone-700 opacity-0 shadow-sm transition group-hover/card:opacity-100">
-        {card.imageData ? "画像OK" : "画像未取得"}
+        {card.imageData || card.imageStatus === "ok"
+          ? "画像OK"
+          : card.imageStatus === "failed"
+            ? "取得失敗"
+            : card.imageStatus === "none"
+              ? "画像URLなし"
+              : "画像未確認"}
       </div>
       <div aria-hidden="true" className="pointer-events-none absolute bottom-[7px] left-[7px] rounded-[6px] border border-white/60 bg-white/90 px-2 py-1 text-[10px] font-bold text-stone-700 opacity-0 shadow-sm transition group-hover/card:opacity-100">
         クリックで編集
