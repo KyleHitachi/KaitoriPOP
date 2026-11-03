@@ -105,7 +105,8 @@ export const THEMES: Record<ThemeId, Theme> = {
       "--title-ink": "#120600",
       "--title-font": '"Cinzel", "Shippori Mincho B1", "Yu Mincho", serif',
       "--title-weight": "900",
-      "--title-transform": "uppercase",
+      // Cinzel is all capitals already; uppercasing would turn "FaB" into "FAB".
+      "--title-transform": "none",
       "--title-tracking": "0.01em",
       "--kicker-font": '"Cinzel", "Shippori Mincho B1", "Yu Mincho", serif',
       // Cinzel figures run wide; keep seven-digit prices clear of the label.

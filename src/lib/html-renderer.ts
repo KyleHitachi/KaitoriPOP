@@ -335,40 +335,64 @@ const EDITORIAL_CSS = String.raw`
 .page .panel {
   background: none;
 }
+/* Heading: title on the left, call to action on the right, both plain
+   type. No bars, rules or separators (they read as drawn UI). */
 .hdr {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr auto;
+  align-items: end;
+  gap: 28px;
+  padding: 26px 36px 14px;
 }
-.hdr-logos {
-  justify-self: start;
+.hdr-logos:empty {
+  display: none;
 }
 .title {
-  justify-content: center;
+  justify-content: flex-start;
+}
+.title-shell {
+  width: auto;
+}
+.title-bar,
+.title-rule {
+  display: none;
+}
+/* "BUYLIST BOARD" only repeats the title. */
+.title-kicker {
+  display: none;
+}
+.title-subtitle {
+  margin-bottom: 10px;
+  border-left: 0;
+  padding-left: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+.title-subtitle span {
+  color: inherit;
 }
 .hdr-cta {
-  justify-self: end;
   min-width: 0;
   border: 0;
-  border-left: 1px solid var(--rule);
   border-radius: 0;
-  padding: 2px 0 2px 22px;
+  padding: 0 0 6px;
   background: none;
   box-shadow: none;
-  text-align: left;
+  text-align: right;
 }
 .hdr-cta .cta-main {
   color: var(--cta-main);
   font-family: var(--title-font);
-  font-size: 28px;
+  font-size: 36px;
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: 0.06em;
+  line-height: 1;
+  letter-spacing: 0.04em;
 }
 .hdr-cta .cta-sub {
-  margin-top: 5px;
+  margin-top: 6px;
   color: var(--cta-sub);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   letter-spacing: 0.04em;
 }
 .bot {
@@ -469,11 +493,11 @@ const EDITORIAL_CSS = String.raw`
 }
 .bot .price-lang {
   margin: 0;
-  color: var(--band-soft);
+  color: color-mix(in srgb, var(--band-ink) 78%, transparent);
   font-family: var(--kicker-font);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 .bot .price-label-rf,
 .bot .price-label-cf {
@@ -483,10 +507,10 @@ const EDITORIAL_CSS = String.raw`
   padding: 0;
   background: none;
   box-shadow: none;
-  color: #c9a6ff;
+  color: #d4b8ff;
 }
 .bot .price-label-cf {
-  color: #d9e2ea;
+  color: #e6edf3;
 }
 .bot .yen {
   margin-left: 2px;
@@ -1148,10 +1172,7 @@ ${editorial ? EDITORIAL_CSS : ""}
 ${size.height ? `<div class="page" style="width:${size.width}px;height:${size.height}px">` : ""}
 <div class="panel" data-theme="${theme.id}" data-layout="${theme.layout}">
   <div class="hdr">
-    <div class="hdr-logos">
-      ${editorial && !config.logoGg ? "" : logoGgHtml}
-      ${editorial && !config.logoMtg ? "" : logoMtgHtml}
-    </div>
+    <div class="hdr-logos">${editorial && !config.logoGg ? "" : logoGgHtml}${editorial && !config.logoMtg ? "" : logoMtgHtml}</div>
     <div class="title">
       <div class="title-shell">
         <span class="title-bar"></span>
