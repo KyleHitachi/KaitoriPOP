@@ -78,7 +78,7 @@ test("the renderer applies theme variables, fonts and the title highlight", () =
   assert.doesNotMatch(classic, /fonts\.googleapis/);
 });
 
-test("official themes show each card whole with a price caption; classic keeps the overlay", () => {
+test("official themes keep prices over the card with a cleaner finish; classic is unchanged", () => {
   const cards = [card({ id: "a", condition: "SP", set: "LEA" })];
   const base = {
     sheetName: "Sheet1",
@@ -100,8 +100,10 @@ test("official themes show each card whole with a price caption; classic keeps t
     assert.equal(THEMES[theme].layout, "editorial");
     const html = renderBuylistHtml({ ...base, theme });
     assert.match(html, /data-layout="editorial"/);
-    assert.match(html, /<div class="caption-meta"><span class="caption-cond">SP<\/span><span class="caption-set">EN \/ LEA<\/span><\/div>/);
-    assert.doesNotMatch(html, /<div class="bot">/);
+    assert.match(html, /<div class="band-meta"><span class="band-cond">SP<\/span><span class="band-set">EN \/ LEA<\/span><\/div>/);
+    // Prices stay over the card; the condition moves off the card name.
+    assert.match(html, /<div class="bot">/);
+    assert.doesNotMatch(html, /class="condition-chip"/);
     // Empty logo slots are left out instead of showing placeholders.
     assert.doesNotMatch(html, /logo-placeholder">ロゴ/);
   }
@@ -109,5 +111,5 @@ test("official themes show each card whole with a price caption; classic keeps t
   const classic = renderBuylistHtml(base);
   assert.match(classic, /data-layout="classic"/);
   assert.match(classic, /<div class="bot">/);
-  assert.doesNotMatch(classic, /class="caption"/);
+  assert.match(classic, /class="condition-chip"/);
 });
