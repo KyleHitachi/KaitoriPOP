@@ -110,6 +110,8 @@ export const THEMES: Record<ThemeId, Theme> = {
       "--hdr-shadow": "0 14px 30px rgba(0, 0, 0, 0.55)",
       "--title-ink": "#F9E6C5",
       "--title-font": '"Cinzel", "Shippori Mincho B1", "Yu Mincho", serif',
+      // Cinzel figures run wide; keep seven-digit prices clear of the label.
+      "--price-size": "24px",
       "--title-weight": "900",
       "--title-transform": "uppercase",
       "--title-tracking": "0.01em",

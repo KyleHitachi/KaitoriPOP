@@ -254,21 +254,30 @@ function buildCardHtml(
   const imageHtml = `<img src="${escapeHtml(imgSrc)}" alt="${imageAlt}" onerror="this.onerror=null;this.setAttribute('data-fallback',this.getAttribute('src'));this.src='${escapeHtml(fallbackSrc)}';" />`;
 
   if (options.editorial) {
-    const metaParts = [
-      options.showCondition ? `<span class="band-cond">${escapeHtml(card.condition)}</span>` : "",
-      options.showExpansionName ? `<span class="band-set">${escapeHtml(buildSetLabel(card))}</span>` : "",
-    ].filter(Boolean);
+    // Foil and rarity become small tags beside the condition, so nothing
+    // sits on the art people recognise the card by.
+    const tags = [
+      foilBadge
+        ? `<span class="band-tag" style="background:${foilStyle.background};border:${foilStyle.border};color:${foilStyle.textColor};">${escapeHtml(foilBadgeLines.join(" "))}</span>`
+        : "",
+      options.showRarityBadge && rarity && rarityStyle
+        ? `<span class="band-tag" style="background:${rarityStyle.background};border:${rarityStyle.border};"><span style="background:${rarityStyle.textBackground};color:${rarityStyle.textColor ?? "inherit"};${rarityStyle.textBackground === "none" ? "" : "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"}">${escapeHtml(rarity)}</span></span>`
+        : "",
+    ].join("");
+    const leftHtml = `${options.showCondition ? `<span class="band-cond">${escapeHtml(card.condition)}</span>` : ""}${tags}`;
+    const setHtml = options.showExpansionName
+      ? `<span class="band-set">${escapeHtml(buildSetLabel(card))}</span>`
+      : "";
     return `
     <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}" data-card-id="${escapeHtml(card.id)}">
       <div class="${frameClasses}">
         <div class="frame-inner">
           ${imageHtml}
-          ${badgeStackHtml}
           <div class="bot">
             <div class="bot-inner">
-              ${metaParts.length > 0 ? `<div class="band-meta">${metaParts.join("")}</div>` : ""}
+              ${leftHtml || setHtml ? `<div class="band-meta"><span class="band-left">${leftHtml}</span>${setHtml}</div>` : ""}
               ${nameBlockHtml}
-              ${buildPriceHtml(card)}
+              <div class="band-prices">${buildPriceHtml(card)}</div>
             </div>
           </div>
         </div>
@@ -325,6 +334,14 @@ const EDITORIAL_CSS = String.raw`
 .panel {
   --rule: color-mix(in srgb, var(--title-ink) 16%, transparent);
   --soft-ink: color-mix(in srgb, var(--title-ink) 58%, transparent);
+  --band: var(--panel-bg);
+  --accent-rule: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.page,
+.panel {
+  background: var(--panel-bg)
+    radial-gradient(ellipse 70% 60% at 50% 38%, color-mix(in srgb, var(--panel-bg), #ffffff 7%) 0%, transparent 100%);
+  background-size: 100% 100%;
 }
 .hdr {
   flex-wrap: wrap;
@@ -400,10 +417,19 @@ const EDITORIAL_CSS = String.raw`
   padding: 0 2px 8px;
 }
 .row-label-text {
-  color: var(--soft-ink);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.36em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--title-ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+.row-label-text::before {
+  content: "";
+  width: 24px;
+  height: 2px;
+  background: var(--accent);
 }
 .row-label-line {
   opacity: 1;
@@ -419,8 +445,25 @@ const EDITORIAL_CSS = String.raw`
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
   transform: none;
 }
+.row-p9 .frame-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 40% 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    125deg,
+    transparent 18%,
+    rgba(255, 120, 200, 0.9) 32%,
+    rgba(120, 220, 255, 0.9) 44%,
+    rgba(255, 240, 140, 0.9) 56%,
+    transparent 70%
+  );
+  mix-blend-mode: color-dodge;
+  opacity: 0.14;
+}
 .row-p9 .frame {
-  box-shadow: 0 0 0 2px var(--accent), 0 10px 22px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 1px var(--accent-rule), 0 12px 26px rgba(0, 0, 0, 0.36);
 }
 .frame-inner {
   border: 0;
@@ -433,13 +476,14 @@ const EDITORIAL_CSS = String.raw`
 .bot {
   background: linear-gradient(
     to bottom,
-    rgba(8, 8, 8, 0) 0%,
-    rgba(8, 8, 8, 0.9) 10%,
-    rgba(8, 8, 8, 0.985) 22%,
-    rgba(8, 8, 8, 0.99) 100%
+    transparent 0%,
+    color-mix(in srgb, var(--band) 90%, transparent) 10%,
+    color-mix(in srgb, var(--band) 98.5%, transparent) 22%,
+    var(--band) 100%
   );
 }
 .bot-inner {
+  z-index: 2;
   justify-content: flex-end;
   padding: 0 9px 8px;
   border-top: 0;
@@ -451,8 +495,8 @@ const EDITORIAL_CSS = String.raw`
   gap: 6px;
   margin-bottom: 4px;
   padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.66);
+  border-bottom: 1px solid var(--accent-rule);
+  color: color-mix(in srgb, var(--title-ink) 62%, transparent);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -462,16 +506,53 @@ const EDITORIAL_CSS = String.raw`
   border-bottom-color: var(--accent);
 }
 .band-cond {
-  color: #ffffff;
+  display: inline-flex;
+  height: 14px;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--title-ink) 55%, transparent);
+  border-radius: 2px;
+  padding: 0 4px;
+  color: var(--title-ink);
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
+}
+.band-left {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+}
+.band-left .band-tag {
+  overflow: hidden;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+}
+/* Every card reserves the same two-line price area and prices end on the
+   same right edge, so a row of prices reads as one line. */
+.band-prices {
+  display: flex;
+  height: 2.2em;
+  flex-direction: column;
+  justify-content: flex-end;
+  font-size: 25px;
+}
+.bot .price-line-single > :last-child {
+  margin-left: auto;
 }
 .bot .name-block {
   margin: 0 0 3px;
 }
 .bot .price-block {
-  color: #ffffff;
+  color: var(--title-ink);
   text-align: left;
+  font-variant-numeric: tabular-nums;
 }
 .bot .price-dual-line,
 .bot .price-line-single {
@@ -480,12 +561,13 @@ const EDITORIAL_CSS = String.raw`
   justify-content: space-between;
   gap: 4px;
   font-family: var(--title-font);
-  font-size: 25px;
+  font-size: var(--price-size, 27px);
   font-weight: 700;
   line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 .bot .price-line-single {
-  font-size: 31px;
+  font-size: calc(var(--price-size, 27px) * 1.18);
 }
 .bot .price,
 .bot .price-amount {
@@ -499,19 +581,19 @@ const EDITORIAL_CSS = String.raw`
 }
 .bot .price-lang {
   margin: 0;
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--title-ink) 60%, transparent);
   font-family: var(--kicker-font);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
 }
 .bot .price-label-rf,
 .bot .price-label-cf {
   color: #f6ddff;
 }
 .bot .yen {
-  margin-left: 1px;
-  font-size: 0.56em;
+  margin-left: 2px;
+  font-size: 0.55em;
   font-weight: 600;
 }
 .ftr {
@@ -520,9 +602,10 @@ const EDITORIAL_CSS = String.raw`
 }
 .ftr p {
   color: var(--soft-ink);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.04em;
+  opacity: 0.85;
 }
 .updated-at-global {
   right: 36px;
@@ -534,7 +617,7 @@ const EDITORIAL_CSS = String.raw`
   box-shadow: none;
   backdrop-filter: none;
   color: var(--soft-ink);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.06em;
 }

@@ -100,7 +100,11 @@ test("official themes keep prices over the card with a cleaner finish; classic i
     assert.equal(THEMES[theme].layout, "editorial");
     const html = renderBuylistHtml({ ...base, theme });
     assert.match(html, /data-layout="editorial"/);
-    assert.match(html, /<div class="band-meta"><span class="band-cond">SP<\/span><span class="band-set">EN \/ LEA<\/span><\/div>/);
+    assert.match(html, /<div class="band-meta"><span class="band-left"><span class="band-cond">SP<\/span><\/span><span class="band-set">EN \/ LEA<\/span><\/div>/);
+    // Foil becomes a tag beside the condition instead of a badge on the art.
+    const foilHtml = renderBuylistHtml({ ...base, theme, cards: [{ ...cards[0], foil: true }] });
+    assert.match(foilHtml, /<span class="band-tag"[^>]*>FOIL<\/span>/);
+    assert.doesNotMatch(foilHtml, /class="badge-stack"/);
     // Prices stay over the card; the condition moves off the card name.
     assert.match(html, /<div class="bot">/);
     assert.doesNotMatch(html, /class="condition-chip"/);
