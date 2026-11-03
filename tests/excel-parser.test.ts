@@ -361,6 +361,8 @@ test("parseExcel warns when more than 36 cards are provided", () => {
   assert.equal(result.sheets[0].cards.length, 36);
   assert.equal(result.warnings.length, 1);
   assert.match(result.warnings[0].message, /36/);
+  assert.equal(result.sheets[0].overflowCards?.length, 4);
+  assert.match(result.warnings[0].message, /掲載外/);
 });
 
 test("parseExcel keeps the highest priced 36 cards when truncating", () => {
@@ -388,6 +390,10 @@ test("parseExcel keeps the highest priced 36 cards when truncating", () => {
   assert.equal(result.sheets[0].cards.length, 36);
   assert.equal(cardNames[0], "Card 37");
   assert.equal(cardNames.includes("Card 1"), false);
+  assert.deepEqual(
+    result.sheets[0].overflowCards?.map((card) => card.nameEn),
+    ["Card 1"]
+  );
 });
 
 test("parseExcel falls back to fixed-column parsing for legacy format", () => {
