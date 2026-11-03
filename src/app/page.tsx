@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SheetConfig, Card, GRID_TOTAL, ImageStatus } from "@/lib/types";
+import { SheetConfig, Card, GRID_TOTAL, ImageStatus, SortMode } from "@/lib/types";
 import {
   PREVIEW_CANVAS_HEIGHT,
 } from "@/lib/layout-tokens";
@@ -10,6 +10,11 @@ import SheetTabs from "@/components/SheetTabs";
 import BuylistPreview from "@/components/BuylistPreview";
 import CardEditor from "@/components/CardEditor";
 import SettingsPanel from "@/components/SettingsPanel";
+import { applySortMode } from "@/lib/sort-engine";
+import {
+  SheetAppearanceSettings,
+  applyAppearanceToAllSheets,
+} from "@/lib/event-sheet-policy";
 import OverflowCardList from "@/components/OverflowCardList";
 import { swapInOverflowCard } from "@/lib/overflow";
 import { EditHistory } from "@/lib/edit-history";
@@ -37,6 +42,22 @@ interface Notice {
   tone: NoticeTone;
   message: string;
 }
+
+const SORT_MODE_OPTIONS: {
+  value: Exclude<SortMode, "custom">;
+  label: string;
+  title: string;
+}[] = [
+  { value: "auto", label: "自動", title: "カテゴリ・カード名ごとに価格順でまとめます" },
+  { value: "price-desc", label: "価格順", title: "価格が高い順に並べます" },
+  { value: "excel", label: "Excel順", title: "取り込んだ表の行の順に並べます" },
+];
+
+const SORT_MODE_NOTICES: Record<Exclude<SortMode, "custom">, string> = {
+  auto: "自動の並び順（カテゴリ別）に切り替えました。",
+  "price-desc": "価格が高い順に切り替えました。",
+  excel: "Excelの並び順に切り替えました。",
+};
 
 const COPY = {
   initialNotice:
@@ -621,6 +642,7 @@ export default function Home() {
       nextSheets[activeSheet] = {
         ...nextSheets[activeSheet],
         sortedOrder: newSortedOrder,
+        sortMode: "custom",
       };
       setSheets(nextSheets);
       setNotice({
@@ -630,6 +652,21 @@ export default function Home() {
     },
     [activeSheet, sheets]
   );
+
+  const handleSortModeChange = useCallback(
+    (mode: Exclude<SortMode, "custom">) => {
+      const nextSheets = [...sheets];
+      nextSheets[activeSheet] = applySortMode(nextSheets[activeSheet], mode);
+      setSheets(nextSheets);
+      setNotice({ tone: "info", message: SORT_MODE_NOTICES[mode] });
+    },
+    [activeSheet, sheets]
+  );
+
+  const handleApplyPresetToAll = useCallback((settings: SheetAppearanceSettings) => {
+    setSheets((current) => applyAppearanceToAllSheets(current, settings));
+    setNotice({ tone: "success", message: "プリセットを全シートへ反映しました。" });
+  }, []);
 
   const handleConfigUpdate = useCallback(
     (updates: Partial<SheetConfig>) => {
@@ -959,6 +996,35 @@ export default function Home() {
                       </button>
                     ))}
                   </div>
+                  <div
+                    role="group"
+                    aria-label="並び順"
+                    className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1"
+                  >
+                    <span className="px-2 text-[11px] font-black text-stone-500">並び順</span>
+                    {SORT_MODE_OPTIONS.map((option) => {
+                      const isActive = (currentConfig.sortMode ?? "auto") === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          aria-pressed={isActive}
+                          title={option.title}
+                          onClick={() => handleSortModeChange(option.value)}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                            isActive ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-white"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                    {currentConfig.sortMode === "custom" && (
+                      <span className="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-900">
+                        手動調整
+                      </span>
+                    )}
+                  </div>
                   <label className="flex items-center gap-2 text-xs font-bold text-stone-600">
                     出力サイズ
                     <select
@@ -1074,6 +1140,7 @@ export default function Home() {
                     <SettingsPanel
                       config={currentConfig}
                       onChange={handleConfigUpdate}
+                      onApplyToAll={handleApplyPresetToAll}
                     />
                   </div>
                 </div>

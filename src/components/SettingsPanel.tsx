@@ -2,39 +2,21 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { RowLabel, SheetConfig } from "@/lib/types";
+import { SheetConfig } from "@/lib/types";
+import type { SheetAppearanceSettings } from "@/lib/event-sheet-policy";
 import { THEMES, THEME_ORDER, ThemeId, resolveTheme } from "@/lib/themes";
 
 interface Props {
   config: SheetConfig;
   onChange: (updates: Partial<SheetConfig>) => void;
-}
-
-interface SheetPresetSettings {
-  theme?: ThemeId;
-  title: string;
-  titleSubtitle?: string;
-  showTitleSubtitle?: boolean;
-  ctaMain: string;
-  ctaSub: string;
-  footerText: string;
-  updatedAtText: string;
-  showCardNames: boolean;
-  showExpansionName: boolean;
-  showRarityBadge: boolean;
-  showCondition: boolean;
-  logoGg?: string;
-  logoMtg?: string;
-  logoGgHeight?: number;
-  logoMtgHeight?: number;
-  rowLabels: RowLabel[];
+  onApplyToAll: (settings: SheetAppearanceSettings) => void;
 }
 
 interface SheetPreset {
   id: string;
   name: string;
   createdAt: string;
-  settings: SheetPresetSettings;
+  settings: SheetAppearanceSettings;
 }
 
 const PRESET_STORAGE_KEY = "kaitori-pop-sheet-presets";
@@ -62,7 +44,7 @@ function buildTodayUpdatedAtText(): string {
 const LOGO_MAX_SOURCE_SIZE = 180_000;
 const LOGO_MAX_DIMENSION = 900;
 
-function extractPresetSettings(config: SheetConfig): SheetPresetSettings {
+function extractPresetSettings(config: SheetConfig): SheetAppearanceSettings {
   return {
     theme: config.theme,
     title: config.title,
@@ -213,7 +195,7 @@ function Section({
   );
 }
 
-export default function SettingsPanel({ config, onChange }: Props) {
+export default function SettingsPanel({ config, onChange, onApplyToAll }: Props) {
   const [presets, setPresets] = useState<SheetPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [presetName, setPresetName] = useState("");
@@ -287,6 +269,21 @@ export default function SettingsPanel({ config, onChange }: Props) {
     });
     setPresetName(preset.name);
     setPresetMessage("プリセットを反映しました。");
+  };
+
+  const applyPresetToAll = () => {
+    const preset = presets.find((item) => item.id === selectedPresetId);
+    if (!preset) {
+      setPresetMessage("全シートへ反映するプリセットを選択してください。");
+      return;
+    }
+
+    onApplyToAll({
+      ...preset.settings,
+      rowLabels: preset.settings.rowLabels.map((label) => ({ ...label })),
+    });
+    setPresetName(preset.name);
+    setPresetMessage("プリセットを全シートへ反映しました。状態表記は先頭2シートだけ表示します。");
   };
 
   const deletePreset = () => {
@@ -722,6 +719,15 @@ export default function SettingsPanel({ config, onChange }: Props) {
               呼び出し
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={applyPresetToAll}
+            disabled={!selectedPresetId}
+            className="mt-2 w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-950 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            全シートへ反映
+          </button>
 
           <div className="mt-2 flex items-center justify-between gap-3">
             <p className="settings-preset-help text-xs leading-relaxed text-stone-700">

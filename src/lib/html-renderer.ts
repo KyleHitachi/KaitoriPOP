@@ -50,7 +50,8 @@ import {
   UPDATED_AT_PAD_Y,
   UPDATED_AT_RADIUS,
 } from "./layout-tokens";
-import { getSortedCards, isHighEndSheet } from "./sort-engine";
+import { isHighEndSheet } from "./sort-engine";
+import { buildGridSlots } from "./event-sheet-policy";
 import { getGridRows, resolveOutputSize } from "./output-sizes";
 import {
   TITLE_HIGHLIGHT_PATTERN,
@@ -286,8 +287,15 @@ function buildFooterHtml(footerText: string): string {
 const PANEL_PATTERN =
   "linear-gradient(135deg, rgba(121,96,53,0.05) 0 1px, transparent 1px 52px), linear-gradient(90deg, rgba(255,255,255,0.45), transparent 42%, rgba(153,118,54,0.08)), linear-gradient(180deg, #f4efe4 0%, #e7dfce 100%)";
 
+const MTG_CARD_BACK_HTML = `<div class="cell cell-mtg-card-back">
+    <div class="frame">
+      <div class="frame-inner">
+        <img src="/mtg-card-back.png" alt="MAGIC: THE GATHERING card back" />
+      </div>
+    </div>
+  </div>`;
+
 export function renderBuylistHtml(config: SheetConfig): string {
-  const sortedCards = getSortedCards(config);
   const rows: string[] = [];
   const showCardNames = config.showCardNames ?? false;
   const showExpansionName = config.showExpansionName ?? true;
@@ -305,6 +313,7 @@ export function renderBuylistHtml(config: SheetConfig): string {
   const size = resolveOutputSize(config.outputSize);
   const gridCols = size.cols;
   const gridRows = getGridRows(size);
+  const slots = buildGridSlots(config, gridRows * gridCols);
 
   for (let row = 0; row < gridRows; row++) {
     const rowLabel = config.rowLabels.find((label) => label.row === row);
@@ -317,10 +326,11 @@ export function renderBuylistHtml(config: SheetConfig): string {
 
     for (let col = 0; col < gridCols; col++) {
       const index = row * gridCols + col;
-      if (index < sortedCards.length) {
+      const slot = slots[index];
+      if (slot.kind === "card") {
         cells.push(
-          buildCardHtml(sortedCards[index], {
-            sortedIndex: index,
+          buildCardHtml(slot.card, {
+            sortedIndex: slot.sortedIndex,
             isP9Row,
             isLotus: isP9Row && col === 0,
             showCardNames,
@@ -329,6 +339,8 @@ export function renderBuylistHtml(config: SheetConfig): string {
             showCondition,
           })
         );
+      } else if (slot.kind === "mtg-card-back") {
+        cells.push(MTG_CARD_BACK_HTML);
       } else {
         cells.push('<div class="cell cell-empty"></div>');
       }

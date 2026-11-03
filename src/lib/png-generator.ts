@@ -1,6 +1,18 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 type Browser = Awaited<ReturnType<typeof import("playwright")["chromium"]["launch"]>>;
 
 let browserInstance: Browser | null = null;
+const MTG_CARD_BACK_SRC = "/mtg-card-back.png";
+
+// setContent has no origin, so app-relative assets are inlined.
+async function inlineLocalAssets(html: string): Promise<string> {
+  if (!html.includes(MTG_CARD_BACK_SRC)) return html;
+  const cardBack = await readFile(path.join(process.cwd(), "public", "mtg-card-back.png"));
+  const dataUrl = `data:image/png;base64,${cardBack.toString("base64")}`;
+  return html.split(`src="${MTG_CARD_BACK_SRC}"`).join(`src="${dataUrl}"`);
+}
 
 async function getBrowser(): Promise<Browser> {
   if (!browserInstance || !browserInstance.isConnected()) {
@@ -21,7 +33,7 @@ export async function generatePng(html: string, width = 1920): Promise<Buffer> {
   });
 
   try {
-    await page.setContent(html, { waitUntil: "domcontentloaded" });
+    await page.setContent(await inlineLocalAssets(html), { waitUntil: "domcontentloaded" });
 
     await page
       .waitForFunction(
