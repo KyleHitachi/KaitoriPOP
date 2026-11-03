@@ -11,22 +11,22 @@ export interface RarityBadgeStyle {
 
 const RARITY_TONES: Record<string, RarityTone> = {
   promo: "gold",
-  "\u30d7\u30ed\u30e2": "gold",
+  "プロモ": "gold",
   iconic: "gold",
-  "\u30a2\u30a4\u30b3\u30cb\u30c3\u30af": "gold",
+  "アイコニック": "gold",
   enchanted: "rainbow",
-  "\u30a8\u30f3\u30c1\u30e3\u30f3\u30c6\u30c3\u30c9": "rainbow",
+  "エンチャンテッド": "rainbow",
   legendary: "gold",
-  "\u30ec\u30b8\u30a7\u30f3\u30c0\u30ea\u30fc": "gold",
+  "レジェンダリー": "gold",
   "superrare": "silver",
   "super rare": "silver",
-  "\u30b9\u30fc\u30d1\u30fc\u30ec\u30a2": "silver",
+  "スーパーレア": "silver",
   rare: "bronze",
-  "\u30ec\u30a2": "bronze",
+  "レア": "bronze",
   uncommon: "silver",
-  "\u30a2\u30f3\u30b3\u30e2\u30f3": "silver",
+  "アンコモン": "silver",
   common: "white",
-  "\u30b3\u30e2\u30f3": "white",
+  "コモン": "white",
 };
 
 const BADGE_STYLES: Record<RarityTone, RarityBadgeStyle> = {
@@ -83,7 +83,7 @@ const BADGE_STYLES: Record<RarityTone, RarityBadgeStyle> = {
 };
 
 function normalizeRarity(value: string): string {
-  return value.trim().replace(/[\s\u3000_\-]+/g, " ").toLowerCase();
+  return value.trim().replace(/[\s　_\-]+/g, " ").toLowerCase();
 }
 
 export function resolveRarityBadgeStyle(rarity: string): RarityBadgeStyle {

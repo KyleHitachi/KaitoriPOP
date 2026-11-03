@@ -34,66 +34,56 @@ interface Notice {
 
 const COPY = {
   initialNotice:
-    "\u0045\u0078\u0063\u0065\u006c\u0020\u002f\u0020\u0043\u0053\u0056\u0020\u3092\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9\u3059\u308b\u3068\u8cb7\u53d6\u8868\u306e\u4f5c\u6210\u3092\u59cb\u3081\u3089\u308c\u307e\u3059\u3002",
+    "Excel / CSV をアップロードすると買取表の作成を始められます。",
   parseProgress:
-    "\u3092\u8aad\u307f\u8fbc\u3093\u3067\u30b7\u30fc\u30c8\u3092\u6e96\u5099\u3057\u3066\u3044\u307e\u3059\u002e\u002e\u002e",
+    "を読み込んでシートを準備しています...",
   parseSuccess:
-    "\u4ef6\u306e\u30b7\u30fc\u30c8\u3092\u8aad\u307f\u8fbc\u307f\u307e\u3057\u305f\u3002\u30d7\u30ec\u30d3\u30e5\u30fc\u3092\u78ba\u8a8d\u3057\u3066\u3001\u5fc5\u8981\u306a\u3089\u4e26\u3073\u66ff\u3048\u3066\u304b\u3089\u66f8\u304d\u51fa\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
-  parseWarningPrefix: "\u6ce8\u610f\u003a\u0020",
+    "件のシートを読み込みました。プレビューを確認して、必要なら並び替えてから書き出してください。",
+  parseWarningPrefix: "注意: ",
   parseFallbackError:
-    "\u30d5\u30a1\u30a4\u30eb\u306e\u8aad\u307f\u8fbc\u307f\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002",
+    "ファイルの読み込みに失敗しました。",
   imageProgress:
-    "\u306e\u30ab\u30fc\u30c9\u753b\u50cf\u3092\u53d6\u5f97\u3057\u3066\u3044\u307e\u3059\u002e\u002e\u002e",
+    "のカード画像を取得しています...",
   imageSuccess:
-    "\u753b\u50cf\u306e\u53d6\u5f97\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f\u3002\u53d6\u5f97\u3067\u304d\u305f\u30ab\u30fc\u30c9\u304b\u3089\u9806\u306b\u30d7\u30ec\u30d3\u30e5\u30fc\u3078\u53cd\u6620\u3057\u3066\u3044\u307e\u3059\u3002",
+    "画像の確認が完了しました。すべてのカード画像を書き出しに使えます。",
   imageError:
-    "\u753b\u50cf\u306e\u53d6\u5f97\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002\u30ec\u30a4\u30a2\u30a6\u30c8\u7de8\u96c6\u306f\u7d9a\u3051\u3089\u308c\u307e\u3059\u304c\u3001\u66f8\u304d\u51fa\u3057\u753b\u50cf\u306b\u4e00\u90e8\u53cd\u6620\u3055\u308c\u306a\u3044\u53ef\u80fd\u6027\u304c\u3042\u308a\u307e\u3059\u3002",
+    "画像の取得に失敗しました。レイアウト編集は続けられますが、書き出し画像に一部反映されない可能性があります。",
   pngProgress:
-    "\u306e\u0020\u0050\u004e\u0047\u0020\u3092\u751f\u6210\u3057\u3066\u3044\u307e\u3059\u002e\u002e\u002e",
+    "の PNG を生成しています...",
   pngFallbackError:
-    "\u0050\u004e\u0047\u0020\u306e\u751f\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002",
+    "PNG の生成に失敗しました。",
   pngSuccessSuffix:
-    "\u0020\u3092\u66f8\u304d\u51fa\u3057\u307e\u3057\u305f\u3002",
+    " を書き出しました。",
   cardUpdated:
-    "\u30ab\u30fc\u30c9\u8a2d\u5b9a\u3092\u66f4\u65b0\u3057\u307e\u3057\u305f\u3002",
+    "カード設定を更新しました。",
   reorderUpdated:
-    "\u30ab\u30fc\u30c9\u306e\u4e26\u3073\u9806\u3092\u66f4\u65b0\u3057\u307e\u3057\u305f\u3002",
-  appTitle: "\u0054\u0043\u0047\u0020\u8cb7\u53d6\u8868\u30b8\u30a7\u30cd\u30ec\u30fc\u30bf\u30fc",
+    "カードの並び順を更新しました。",
+  appTitle: "TCG 買取表ジェネレーター",
   appSubtitle:
-    "\u0045\u0078\u0063\u0065\u006c\u0020\u002f\u0020\u0043\u0053\u0056\u0020\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3001\u30ec\u30a4\u30a2\u30a6\u30c8\u3092\u8abf\u6574\u3057\u3001\u305d\u306e\u307e\u307e\u0020\u0050\u004e\u0047\u0020\u306b\u66f8\u304d\u51fa\u305b\u307e\u3059\u3002",
-  sheets: "\u30b7\u30fc\u30c8\u6570",
-  cards: "\u30ab\u30fc\u30c9\u6570",
-  images: "\u753b\u50cf",
-  activeSheet: "\u5bfe\u8c61\u30b7\u30fc\u30c8",
-  guide: "\u4f7f\u3044\u65b9",
-  guideTitle: "\u0033\u30b9\u30c6\u30c3\u30d7\u3067\u4f5c\u6210",
-  guideStep1: "\u0031\u002e\u0020\u0045\u0078\u0063\u0065\u006c\u0020\u002f\u0020\u0043\u0053\u0056\u0020\u3092\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9",
+    "Excel / CSV を読み込んで、レイアウトを調整し、そのまま PNG に書き出せます。",
+  guide: "使い方",
+  guideTitle: "3ステップで作成",
+  guideStep1: "1. Excel / CSV をアップロード",
   guideStep1Body:
-    "\u30b7\u30fc\u30c8\u3054\u3068\u306b\u5185\u5bb9\u3092\u8aad\u307f\u53d6\u308a\u3001\u8cb7\u53d6\u8868\u30bf\u30d6\u3092\u81ea\u52d5\u3067\u4f5c\u6210\u3057\u307e\u3059\u3002",
-  guideStep2: "\u0032\u002e\u0020\u30d7\u30ec\u30d3\u30e5\u30fc\u3092\u8abf\u6574",
+    "シートごとに内容を読み取り、買取表タブを自動で作成します。",
+  guideStep2: "2. プレビューを調整",
   guideStep2Body:
-    "\u30c9\u30e9\u30c3\u30b0\u3067\u4e26\u3073\u66ff\u3048\u3001\u5fc5\u8981\u306a\u30ab\u30fc\u30c9\u3060\u3051\u4fa1\u683c\u3084\u30bb\u30c3\u30c8\u8868\u8a18\u3092\u4e0a\u66f8\u304d\u3067\u304d\u307e\u3059\u3002",
-  guideStep3: "\u0033\u002e\u0020\u0050\u004e\u0047\u0020\u3092\u66f8\u304d\u51fa\u3057",
+    "ドラッグで並び替え、必要なカードだけ価格やセット表記を上書きできます。",
+  guideStep3: "3. PNG を書き出し",
   guideStep3Body:
-    "\u5fc5\u8981\u306a\u3089\u753b\u50cf\u3092\u53d6\u5f97\u3057\u3066\u3001\u305d\u306e\u307e\u307e\u5b8c\u6210\u7248\u306e\u0020\u0050\u004e\u0047\u0020\u3092\u751f\u6210\u3057\u307e\u3059\u3002",
-  tipsLabel: "\u304a\u3059\u3059\u3081\u003a",
+    "カード画像は書き出し時に自動で取得され、そのまま完成版の PNG になります。",
+  tipsLabel: "おすすめ:",
   tipsBody:
-    "\u30b7\u30fc\u30c8\u540d\u306f\u77ed\u3081\u3001\u0031\u30b7\u30fc\u30c8\u6700\u5927\u0033\u0036\u679a\u3001\u4fa1\u683c\u78ba\u8a8d\u5f8c\u306b\u66f8\u304d\u51fa\u3059\u3068\u5b89\u5b9a\u3057\u307e\u3059\u3002",
-  sampleCsv: "\u30b5\u30f3\u30d7\u30ebCSV",
-  trySample: "サンプルCSVで試す",
-  openSettings: "\u8a2d\u5b9a\u3092\u958b\u304f",
-  closeSettings: "\u8a2d\u5b9a\u3092\u9589\u3058\u308b",
-  fetchImages: "\u753b\u50cf\u3092\u53d6\u5f97",
-  fetching: "\u53d6\u5f97\u4e2d\u002e\u002e\u002e",
-  exportPng: "\u0050\u004e\u0047\u3092\u66f8\u304d\u51fa\u3057",
-  generating: "\u751f\u6210\u4e2d\u002e\u002e\u002e",
+    "シート名は短め、1シート最大36枚、価格確認後に書き出すと安定します。",
+  sampleCsv: "サンプルCSVをダウンロード",
+  openSettings: "設定を開く",
+  closeSettings: "設定を閉じる",
+  fetching: "取得中...",
+  exportPng: "PNGを書き出し",
+  generating: "生成中...",
   helper:
-    "\u30c9\u30e9\u30c3\u30b0\u3067\u4e26\u3073\u66ff\u3048\u3001\u30ab\u30fc\u30c9\u3092\u30af\u30ea\u30c3\u30af\u3057\u3066\u500b\u5225\u8a2d\u5b9a\u3001\u53f3\u5074\u306e\u8a2d\u5b9a\u3067\u30bf\u30a4\u30c8\u30eb\u3084\u30ed\u30b4\u3092\u8abf\u6574\u3067\u304d\u307e\u3059\u3002",
+    "ドラッグで並び替え、カードをクリックして個別設定、右側の設定でタイトルやロゴを調整できます。",
   sampleError: "サンプルCSVの読み込みに失敗しました。",
-  workflowLoad: "読込",
-  workflowImages: "画像",
-  workflowAdjust: "調整",
-  workflowExport: "出力",
   checksTitle: "出力前チェック",
   zoomFit: "全体",
   zoom50: "50%",
@@ -238,6 +228,13 @@ export default function Home() {
       isDarkMode ? "dark" : "light"
     );
   }, [isDarkMode]);
+
+  // Success and progress notes clear themselves; errors stay until closed.
+  useEffect(() => {
+    if (!notice || notice.tone === "error" || generating || loading) return;
+    const timer = window.setTimeout(() => setNotice(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [notice, generating, loading]);
 
   const applySavedWork = useCallback((work: SavedWork, message: string) => {
     setSheets(work.sheets);
@@ -569,15 +566,10 @@ export default function Home() {
   );
 
   const currentConfig = sheets[activeSheet];
-  const totalCards = useMemo(
-    () => sheets.reduce((count, sheet) => count + sheet.cards.length, 0),
-    [sheets]
-  );
   const imageCounts = useMemo(
     () => countImageStatuses(currentConfig?.cards ?? []),
     [currentConfig]
   );
-  const fetchedImageCount = imageCounts.ok;
   const hasSheets = sheets.length > 0;
   const missingPriceCount = useMemo(
     () =>
@@ -595,9 +587,9 @@ export default function Home() {
 
     return [
       {
-        tone: "success" as NoticeTone,
+        tone: (currentConfig.cards.length < GRID_TOTAL ? "info" : "success") as NoticeTone,
         label: "カード枚数",
-        value: `${currentConfig.cards.length}/${GRID_TOTAL}`,
+        value: `${currentConfig.cards.length}/${GRID_TOTAL}（空き${GRID_TOTAL - currentConfig.cards.length}枠）`,
       },
       {
         tone: (imageCounts.failed > 0
@@ -653,6 +645,8 @@ export default function Home() {
         : []),
     ];
   }, [currentConfig, imageCounts, missingPriceCount, overflowCount]);
+  const issueChecks = outputChecks.filter((check) => check.tone !== "success");
+  const okChecks = outputChecks.filter((check) => check.tone === "success");
 
   useEffect(() => {
     const viewportNode = previewViewportRef.current;
@@ -660,7 +654,15 @@ export default function Home() {
     if (!viewportNode || !canvasNode) return;
 
     const updatePreviewMetrics = () => {
-      const nextScale = Math.min(viewportNode.clientWidth / PREVIEW_CANVAS_WIDTH, 1);
+      // clientWidth includes the viewport's padding; fit to the inner box so
+      // the right-hand column is not clipped behind a horizontal scrollbar.
+      const viewportStyle = window.getComputedStyle(viewportNode);
+      const innerWidth =
+        viewportNode.clientWidth -
+        parseFloat(viewportStyle.paddingLeft) -
+        parseFloat(viewportStyle.paddingRight) -
+        2;
+      const nextScale = Math.min(innerWidth / PREVIEW_CANVAS_WIDTH, 1);
       setFitPreviewScale(nextScale);
       setPreviewCanvasHeight(
         Math.max(canvasNode.scrollHeight, canvasNode.offsetHeight, PREVIEW_CANVAS_HEIGHT)
@@ -748,38 +750,6 @@ export default function Home() {
               </button>
             </div>
 
-            {hasSheets && (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                <div className="text-[11px] font-semibold tracking-[0.2em] text-stone-500">
-                  {COPY.sheets}
-                </div>
-                <div className="mt-1 text-xl font-black text-stone-900">{sheets.length}</div>
-              </div>
-              <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                <div className="text-[11px] font-semibold tracking-[0.2em] text-stone-500">
-                  {COPY.cards}
-                </div>
-                <div className="mt-1 text-xl font-black text-stone-900">{totalCards}</div>
-              </div>
-              <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                <div className="text-[11px] font-semibold tracking-[0.2em] text-stone-500">
-                  {COPY.images}
-                </div>
-                <div className="mt-1 text-xl font-black text-stone-900">
-                  {fetchedImageCount}/{currentConfig?.cards.length ?? 0}
-                </div>
-              </div>
-              <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                <div className="text-[11px] font-semibold tracking-[0.2em] text-stone-500">
-                  {COPY.activeSheet}
-                </div>
-                <div className="mt-1 truncate text-base font-black text-stone-900">
-                  {currentConfig?.sheetName}
-                </div>
-              </div>
-              </div>
-            )}
           </div>
         </div>
       </header>
@@ -787,11 +757,20 @@ export default function Home() {
       <main className="mx-auto max-w-[1400px] px-6 py-6">
         {notice && (
           <div
-            className={`mb-5 rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm ${buildNoticeClasses(
+            role={notice.tone === "error" ? "alert" : "status"}
+            className={`mb-5 flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm ${buildNoticeClasses(
               notice.tone
             )}`}
           >
-            {notice.message}
+            <div className="min-w-0 flex-1">{notice.message}</div>
+            <button
+              type="button"
+              aria-label="お知らせを閉じる"
+              onClick={() => setNotice(null)}
+              className="-my-1 shrink-0 rounded-lg px-2 py-1 text-base leading-none opacity-60 transition hover:opacity-100"
+            >
+              ×
+            </button>
           </div>
         )}
 
@@ -828,18 +807,10 @@ export default function Home() {
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-stone-300">
                 {COPY.tipsLabel}
                 <div className="mt-2">{COPY.tipsBody}</div>
-                <button
-                  type="button"
-                  onClick={handleLoadSample}
-                  disabled={loading}
-                  className="mt-3 inline-flex rounded-full bg-amber-400 px-4 py-2 text-xs font-black text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {COPY.trySample}
-                </button>
                 <a
                   href="/sample-buylist.csv"
                   download="sample-buylist.csv"
-                  className="ml-2 mt-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15"
+                  className="mt-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15"
                 >
                   {COPY.sampleCsv}
                 </a>
@@ -855,57 +826,42 @@ export default function Home() {
             />
 
             <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-xs shadow-sm">
-              <div className="mr-2 font-black tracking-[0.14em] text-stone-500">
+              <div className="mr-1 font-black tracking-[0.14em] text-stone-500">
                 {COPY.checksTitle}
               </div>
-              {outputChecks.map((check) => (
+              {issueChecks.map((check) => (
                 <div
                   key={check.label}
-                  className={`rounded-full border px-3 py-1.5 ${buildCheckToneClasses(
+                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 ${buildCheckToneClasses(
                     check.tone
                   )}`}
                 >
-                  <span className="font-black">{check.label}: </span>
-                  <span className="font-medium">{check.value}</span>
+                  <span>
+                    <span className="font-black">{check.label}: </span>
+                    <span className="font-medium">{check.value}</span>
+                  </span>
+                  {check.label === "画像" && (
+                    <button
+                      type="button"
+                      onClick={handleDownloadImages}
+                      disabled={loading}
+                      className="rounded-full border border-current px-2 py-0.5 font-bold opacity-80 transition hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {loading ? COPY.fetching : "再確認"}
+                    </button>
+                  )}
                 </div>
               ))}
+              {okChecks.length > 0 && (
+                <div className="px-1 font-medium text-emerald-700">
+                  ✓ 問題なし：{okChecks.map((check) => check.label).join("・")}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-4 xl:flex-row">
               <div className="min-w-0 flex-1 space-y-4">
                 <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                  <button
-                    onClick={() => setShowSettings(!showSettings)}
-                    className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
-                  >
-                    {showSettings ? COPY.closeSettings : COPY.openSettings}
-                  </button>
-                  <button
-                    onClick={handleDownloadImages}
-                    disabled={loading}
-                    className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {loading ? COPY.fetching : COPY.fetchImages}
-                  </button>
-                  <button
-                    onClick={handleGeneratePng}
-                    disabled={generating}
-                    className="inline-flex items-center gap-2 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {generating && (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    )}
-                    {generating ? COPY.generating : COPY.exportPng}
-                  </button>
-                  {sheets.length > 1 && (
-                    <button
-                      onClick={handleExportAllSheets}
-                      disabled={generating}
-                      className="rounded-xl border border-red-700 px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      全シートを書き出し（zip）
-                    </button>
-                  )}
                   <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1">
                     {[
                       { label: COPY.zoomFit, value: "fit" as PreviewZoom },
@@ -927,11 +883,36 @@ export default function Home() {
                       </button>
                     ))}
                   </div>
-                  <div className="ml-auto text-xs text-stone-500">
-                    {COPY.activeSheet}:{" "}
-                    <span className="font-semibold text-stone-700">
-                      {currentConfig.sheetName}
-                    </span>
+                  <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSettings(!showSettings)}
+                      aria-pressed={showSettings}
+                      className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+                    >
+                      {showSettings ? COPY.closeSettings : COPY.openSettings}
+                    </button>
+                    {sheets.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={handleExportAllSheets}
+                        disabled={generating}
+                        className="rounded-xl border border-red-700 px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        全シートを書き出し（zip）
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleGeneratePng}
+                      disabled={generating}
+                      className="inline-flex items-center gap-2 rounded-xl bg-red-700 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {generating && (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      )}
+                      {generating ? COPY.generating : COPY.exportPng}
+                    </button>
                   </div>
                 </div>
 
