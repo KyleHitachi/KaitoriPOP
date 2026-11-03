@@ -501,7 +501,7 @@ test("parseExcel initializes display order by highest price first", () => {
 });
 
 test("parseExcel applies the category sort to csv imports with P9 cards", () => {
-  const csv = readFileSync(join(process.cwd(), "sample-buylist.csv"));
+  const csv = readFileSync(join(process.cwd(), "public", "sample-buylist.csv"));
   const buffer = csv.buffer.slice(csv.byteOffset, csv.byteOffset + csv.byteLength);
 
   const sheet = parseExcel(buffer, "sample-buylist.csv").sheets[0];
