@@ -1,8 +1,6 @@
 import {
   Card,
   SheetConfig,
-  GRID_COLS,
-  GRID_ROWS,
   DEFAULT_TITLE_SUBTITLE,
 } from "./types";
 import { buildCardPlaceholderDataUrl, resolveCardImageSrc } from "./card-image";
@@ -26,7 +24,6 @@ import {
   GRID_GAP,
   GRID_SIDE_PADDING,
   KICKER_FONT_STACK,
-  PREVIEW_CANVAS_WIDTH,
   PRICE_DUAL_SIZE,
   PRICE_FONT_STACK,
   PRICE_LANG_SIZE,
@@ -54,6 +51,7 @@ import {
   UPDATED_AT_RADIUS,
 } from "./layout-tokens";
 import { getSortedCards, isHighEndSheet } from "./sort-engine";
+import { getGridRows, resolveOutputSize } from "./output-sizes";
 import {
   TITLE_HIGHLIGHT_PATTERN,
   buildThemeFontLink,
@@ -304,8 +302,11 @@ export function renderBuylistHtml(config: SheetConfig): string {
 
   const highEndSheet = isHighEndSheet(config.sheetName, config.cards);
   const theme = resolveTheme(config.theme);
+  const size = resolveOutputSize(config.outputSize);
+  const gridCols = size.cols;
+  const gridRows = getGridRows(size);
 
-  for (let row = 0; row < GRID_ROWS; row++) {
+  for (let row = 0; row < gridRows; row++) {
     const rowLabel = config.rowLabels.find((label) => label.row === row);
     if (rowLabel) {
       rows.push(buildRowLabelHtml(rowLabel));
@@ -314,8 +315,8 @@ export function renderBuylistHtml(config: SheetConfig): string {
     const isP9Row = highEndSheet && row === 0;
     const cells: string[] = [];
 
-    for (let col = 0; col < GRID_COLS; col++) {
-      const index = row * GRID_COLS + col;
+    for (let col = 0; col < gridCols; col++) {
+      const index = row * gridCols + col;
       if (index < sortedCards.length) {
         cells.push(
           buildCardHtml(sortedCards[index], {
@@ -351,12 +352,30 @@ export function renderBuylistHtml(config: SheetConfig): string {
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=1920" />
+<meta name="viewport" content="width=${size.width}" />
+<script>
+  // Fixed-size outputs (square, A4, ...) scale the board down to fit the
+  // canvas and centre it. Called again by the preview after each edit and
+  // by the PNG renderer once fonts and images have loaded.
+  window.__fitPanel = function () {
+    var page = document.querySelector(".page");
+    var panel = document.querySelector(".panel");
+    if (!page || !panel) return;
+    panel.style.transform = "";
+    var scale = Math.min(1, page.clientHeight / panel.offsetHeight, page.clientWidth / panel.offsetWidth);
+    var left = (page.clientWidth - panel.offsetWidth * scale) / 2;
+    var top = (page.clientHeight - panel.offsetHeight * scale) / 2;
+    panel.style.transform = "translate(" + left + "px, " + top + "px) scale(" + scale + ")";
+  };
+  document.addEventListener("DOMContentLoaded", window.__fitPanel);
+  window.addEventListener("load", window.__fitPanel);
+  if (document.fonts) document.fonts.ready.then(window.__fitPanel);
+</script>
 ${buildThemeFontLink(theme)}
 <script>
   (function(d){var config={kitId:'fok1xnt',scriptTimeout:8000,async:true,active:function(){window.__typekitStatus='active';},inactive:function(){window.__typekitStatus='inactive';}},h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\\bwf-loading\\b/g,"")+" wf-inactive";window.__typekitStatus='timeout';},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;window.__typekitStatus='loading';h.className+=" wf-loading";tk.src="https://use.typekit.net/"+config.kitId+".js";tk.async=true;tk.onerror=function(){window.__typekitStatus='script-error';};tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){window.__typekitStatus='load-error';}};s.parentNode.insertBefore(tk,s)})(document);
 </script>
-<style>
+<style data-buylist-style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
   --accent: #b82020;
@@ -405,7 +424,7 @@ body {
 }
 .panel {
   position: relative;
-  width: ${PREVIEW_CANVAS_WIDTH}px;
+  width: ${size.width}px;
   background: var(--panel-bg);
   background-image: var(--panel-image);
   background-size: var(--panel-size);
@@ -587,7 +606,7 @@ body {
 }
 .cell {
   flex: 1;
-  max-width: calc((1920px - 56px - 64px) / 9);
+  max-width: calc((${size.width}px - 56px - ${(gridCols - 1) * 8}px) / ${gridCols});
 }
 .cell-empty {
   visibility: hidden;
@@ -863,9 +882,35 @@ body {
 .footer-note {
   color: var(--accent);
 }
+${size.width < 1700 ? `.title-line {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.title-subtitle {
+  margin-bottom: 0;
+}
+.title-bar {
+  height: auto;
+  align-self: stretch;
+}` : ""}
+.page {
+  position: relative;
+  overflow: hidden;
+  background: var(--panel-bg);
+  background-image: var(--panel-image);
+  background-size: var(--panel-size);
+}
+.page .panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
 </style>
 </head>
 <body>
+${size.height ? `<div class="page" style="width:${size.width}px;height:${size.height}px">` : ""}
 <div class="panel" data-theme="${theme.id}">
   <div class="hdr">
     <div class="hdr-logos">
@@ -899,6 +944,7 @@ body {
   </div>
   ${config.updatedAtText ? `<div class="updated-at-global">${escapeHtml(config.updatedAtText)}</div>` : ""}
 </div>
+${size.height ? "</div>" : ""}
 </body>
 </html>`;
 }

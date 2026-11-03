@@ -15,8 +15,9 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Card, GRID_COLS, SheetConfig } from "@/lib/types";
-import { PREVIEW_CANVAS_HEIGHT, PREVIEW_CANVAS_WIDTH } from "@/lib/layout-tokens";
+import { Card, SheetConfig } from "@/lib/types";
+import { resolveOutputSize } from "@/lib/output-sizes";
+import { PREVIEW_CANVAS_HEIGHT } from "@/lib/layout-tokens";
 import { renderBuylistHtml } from "@/lib/html-renderer";
 import { resolveCardImageSrc } from "@/lib/card-image";
 import { getSortedCards } from "@/lib/sort-engine";
@@ -53,13 +54,30 @@ function parseCellId(id: string | number): number {
 // instead of reloading (and flashing) on every edit.
 function patchDocument(doc: Document, html: string): void {
   const next = new DOMParser().parseFromString(html, "text/html");
-  const currentStyles = doc.head.querySelectorAll("style");
-  next.head.querySelectorAll("style").forEach((style, index) => {
-    const current = currentStyles[index];
-    if (current && current.textContent !== style.textContent) {
-      current.textContent = style.textContent;
-    }
+  // Match our stylesheet by its marker, not by position: Adobe Fonts
+  // inserts its own <style> into the head after the first load.
+  const nextStyle = next.head.querySelector("style[data-buylist-style]");
+  const currentStyle = doc.head.querySelector("style[data-buylist-style]");
+  if (nextStyle && currentStyle && currentStyle.textContent !== nextStyle.textContent) {
+    currentStyle.textContent = nextStyle.textContent;
+  }
+
+  // Theme fonts come from stylesheet links; keep them in step so a theme
+  // switch loads its fonts without reloading the frame.
+  const nextLinks = Array.from(next.head.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]"));
+  const nextHrefs = new Set(nextLinks.map((link) => link.href));
+  doc.head.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]").forEach((link) => {
+    if (!nextHrefs.has(link.href)) link.remove();
   });
+  const currentHrefs = new Set(
+    Array.from(doc.head.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")).map(
+      (link) => link.href
+    )
+  );
+  nextLinks.forEach((link) => {
+    if (!currentHrefs.has(link.href)) doc.head.appendChild(doc.importNode(link, true));
+  });
+
   doc.body.innerHTML = next.body.innerHTML;
 }
 
@@ -99,12 +117,6 @@ function describeImageStatus(card: Card): string {
   return "画像未確認";
 }
 
-const MOVE_KEYS: Record<string, number> = {
-  ArrowLeft: -1,
-  ArrowRight: 1,
-  ArrowUp: -GRID_COLS,
-  ArrowDown: GRID_COLS,
-};
 
 // The overlay lives inside the scaled preview, so on-card UI is sized by
 // 1/scale to stay readable at "全体" (about 50%).
@@ -112,12 +124,14 @@ function CellTarget({
   rect,
   card,
   scale,
+  cols,
   onClick,
   onMove,
 }: {
   rect: CellRect;
   card: Card;
   scale: number;
+  cols: number;
   onClick: () => void;
   onMove: (delta: number) => void;
 }) {
@@ -149,7 +163,9 @@ function CellTarget({
       onClick();
       return;
     }
-    const delta = MOVE_KEYS[event.key];
+    const delta = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols }[
+      event.key as "ArrowLeft"
+    ];
     if (event.altKey && delta !== undefined) {
       event.preventDefault();
       onMove(delta);
@@ -219,6 +235,8 @@ function CellTarget({
 
 export default function BuylistPreview({ config, scale = 1, onCardClick, onReorder }: Props) {
   const html = useMemo(() => renderBuylistHtml(config), [config]);
+  const size = resolveOutputSize(config.outputSize);
+  const canvasWidth = size.width;
   const sortedCards = useMemo(() => getSortedCards(config), [config]);
   // srcDoc is fixed at mount; later changes are patched in place.
   const [initialHtml] = useState(html);
@@ -238,9 +256,12 @@ export default function BuylistPreview({ config, scale = 1, onCardClick, onReord
   const measure = useCallback(() => {
     const doc = iframeRef.current?.contentDocument;
     if (!doc?.body) return;
+    (doc.defaultView as (Window & { __fitPanel?: () => void }) | null)?.__fitPanel?.();
     setCellRects(measureCells(doc));
-    setFrameHeight(Math.max(doc.documentElement.scrollHeight, PREVIEW_CANVAS_HEIGHT));
-  }, []);
+    setFrameHeight(
+      size.height ?? Math.max(doc.documentElement.scrollHeight, PREVIEW_CANVAS_HEIGHT)
+    );
+  }, [size.height]);
 
   useEffect(() => {
     const doc = iframeRef.current?.contentDocument;
@@ -327,7 +348,7 @@ export default function BuylistPreview({ config, scale = 1, onCardClick, onReord
   const activeCard = activeIndex === null ? null : sortedCards[activeIndex];
 
   return (
-    <div className="relative" style={{ width: PREVIEW_CANVAS_WIDTH, height: frameHeight }}>
+    <div className="relative" style={{ width: canvasWidth, height: frameHeight }}>
       <iframe
         ref={iframeRef}
         title="買取表プレビュー"
@@ -335,7 +356,7 @@ export default function BuylistPreview({ config, scale = 1, onCardClick, onReord
         onLoad={handleLoad}
         scrolling="no"
         className="block border-0"
-        style={{ width: PREVIEW_CANVAS_WIDTH, height: frameHeight }}
+        style={{ width: canvasWidth, height: frameHeight }}
       />
       <DndContext
         sensors={sensors}
@@ -354,6 +375,7 @@ export default function BuylistPreview({ config, scale = 1, onCardClick, onReord
                 rect={rect}
                 card={card}
                 scale={scale}
+                cols={size.cols}
                 onClick={() => onCardClick?.(config.sortedOrder[rect.sortedIndex])}
                 onMove={(delta) => handleKeyboardMove(rect.sortedIndex, delta)}
               />

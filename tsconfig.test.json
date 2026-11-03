@@ -26,6 +26,7 @@
     "src/lib/image-fetcher.ts",
     "src/lib/edit-history.ts",
     "src/lib/themes.ts",
+    "src/lib/output-sizes.ts",
     "src/lib/html-renderer.ts",
     "tests/**/*.ts"
   ],

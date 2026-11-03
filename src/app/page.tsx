@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SheetConfig, Card, GRID_TOTAL, ImageStatus } from "@/lib/types";
 import {
   PREVIEW_CANVAS_HEIGHT,
-  PREVIEW_CANVAS_WIDTH,
 } from "@/lib/layout-tokens";
 import ExcelUploader from "@/components/ExcelUploader";
 import SheetTabs from "@/components/SheetTabs";
@@ -14,6 +13,12 @@ import SettingsPanel from "@/components/SettingsPanel";
 import OverflowCardList from "@/components/OverflowCardList";
 import { swapInOverflowCard } from "@/lib/overflow";
 import { EditHistory } from "@/lib/edit-history";
+import {
+  OUTPUT_SIZES,
+  OUTPUT_SIZE_ORDER,
+  OutputSizeId,
+  resolveOutputSize,
+} from "@/lib/output-sizes";
 import {
   SavedWork,
   buildSavedWork,
@@ -492,7 +497,10 @@ export default function Home() {
         );
       }
 
-      const [fileName] = buildUniqueFileNames([config.sheetName], ".png");
+      const [fileName] = buildUniqueFileNames(
+        [`${config.sheetName}${resolveOutputSize(config.outputSize).fileSuffix}`],
+        ".png"
+      );
       downloadBlob(await requestSheetPng(finalConfig), fileName);
 
       setNotice({
@@ -516,7 +524,9 @@ export default function Home() {
 
     setGenerating(true);
     const fileNames = buildUniqueFileNames(
-      sheets.map((sheet) => sheet.sheetName),
+      sheets.map(
+        (sheet) => `${sheet.sheetName}${resolveOutputSize(sheet.outputSize).fileSuffix}`
+      ),
       ".png"
     );
     const entries: ZipEntry[] = [];
@@ -631,6 +641,7 @@ export default function Home() {
   );
 
   const currentConfig = sheets[activeSheet];
+  const canvasWidth = resolveOutputSize(currentConfig?.outputSize).width;
   const imageCounts = useMemo(
     () => countImageStatuses(currentConfig?.cards ?? []),
     [currentConfig]
@@ -727,7 +738,7 @@ export default function Home() {
         parseFloat(viewportStyle.paddingLeft) -
         parseFloat(viewportStyle.paddingRight) -
         2;
-      const nextScale = Math.min(innerWidth / PREVIEW_CANVAS_WIDTH, 1);
+      const nextScale = Math.min(innerWidth / canvasWidth, 1);
       setFitPreviewScale(nextScale);
       setPreviewCanvasHeight(
         Math.max(canvasNode.scrollHeight, canvasNode.offsetHeight, PREVIEW_CANVAS_HEIGHT)
@@ -745,7 +756,7 @@ export default function Home() {
       viewportObserver.disconnect();
       canvasObserver.disconnect();
     };
-  }, [hasSheets, showSettings, currentConfig]);
+  }, [canvasWidth, hasSheets, showSettings, currentConfig]);
 
   return (
     <div
@@ -948,6 +959,22 @@ export default function Home() {
                       </button>
                     ))}
                   </div>
+                  <label className="flex items-center gap-2 text-xs font-bold text-stone-600">
+                    出力サイズ
+                    <select
+                      value={resolveOutputSize(currentConfig.outputSize).id}
+                      onChange={(event) =>
+                        handleConfigUpdate({ outputSize: event.target.value as OutputSizeId })
+                      }
+                      className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700"
+                    >
+                      {OUTPUT_SIZE_ORDER.map((sizeId) => (
+                        <option key={sizeId} value={sizeId}>
+                          {OUTPUT_SIZES[sizeId].label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
@@ -1008,7 +1035,7 @@ export default function Home() {
                   <div
                     className="origin-top-left overflow-hidden rounded-[24px] border border-[#c8b482]/80 bg-[#f1eadc] shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
                     style={{
-                      width: `${Math.round(PREVIEW_CANVAS_WIDTH * previewScale)}px`,
+                      width: `${Math.round(canvasWidth * previewScale)}px`,
                       height: `${Math.round(previewCanvasHeight * previewScale)}px`,
                     }}
                   >
@@ -1016,7 +1043,7 @@ export default function Home() {
                       ref={previewCanvasRef}
                       data-buylist-preview
                       style={{
-                        width: `${PREVIEW_CANVAS_WIDTH}px`,
+                        width: `${canvasWidth}px`,
                         transform: `scale(${previewScale})`,
                         transformOrigin: "top left",
                       }}
