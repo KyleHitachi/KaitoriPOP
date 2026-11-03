@@ -181,6 +181,7 @@ function buildPriceHtml(card: Card): string {
 function buildCardHtml(
   card: Card,
   options: {
+    sortedIndex: number;
     isP9Row: boolean;
     isLotus: boolean;
     showCardNames: boolean;
@@ -229,7 +230,7 @@ function buildCardHtml(
       : "";
 
   return `
-    <div class="${cellClasses}">
+    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}">
       <div class="${frameClasses}">
         <div class="frame-inner">
           <img src="${escapeHtml(imgSrc)}" alt="${imageAlt}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(fallbackSrc)}';" />
@@ -308,6 +309,7 @@ export function renderBuylistHtml(config: SheetConfig): string {
       if (index < sortedCards.length) {
         cells.push(
           buildCardHtml(sortedCards[index], {
+            sortedIndex: index,
             isP9Row,
             isLotus: isP9Row && col === 0,
             showCardNames,

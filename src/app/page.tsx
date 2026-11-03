@@ -1,33 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SheetConfig, Card, GRID_TOTAL } from "@/lib/types";
 import {
-  SheetConfig,
-  Card,
-  GRID_TOTAL,
-  DEFAULT_TITLE_SUBTITLE,
-} from "@/lib/types";
-import {
-  CTA_BORDER_WIDTH,
-  CTA_MIN_WIDTH,
-  CTA_RADIUS,
-  KICKER_FONT_STACK,
   PREVIEW_CANVAS_HEIGHT,
   PREVIEW_CANVAS_WIDTH,
-  TITLE_BAR_HEIGHT,
-  TITLE_BAR_WIDTH,
-  TITLE_FONT_SIZE,
-  TITLE_FONT_STACK,
-  TITLE_KICKER_SIZE,
-  TITLE_RULE_HEIGHT,
-  TITLE_RULE_WIDTH,
-  TITLE_SHELL_WIDTH,
-  TITLE_SUBTITLE_SIZE,
-  TITLE_TRACKING,
 } from "@/lib/layout-tokens";
 import ExcelUploader from "@/components/ExcelUploader";
 import SheetTabs from "@/components/SheetTabs";
-import CardGrid from "@/components/CardGrid";
+import BuylistPreview from "@/components/BuylistPreview";
 import CardEditor from "@/components/CardEditor";
 import SettingsPanel from "@/components/SettingsPanel";
 
@@ -124,34 +105,6 @@ function buildCheckToneClasses(tone: NoticeTone): string {
   if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-900";
   if (tone === "error") return "border-red-200 bg-red-50 text-red-900";
   return "border-amber-200 bg-amber-50 text-amber-900";
-}
-
-function renderPreviewTitle(title: string) {
-  if (!title.startsWith("MTG")) return title;
-
-  return (
-    <>
-      <span className="text-[#b82020]">MTG</span>
-      <span>{title.slice(3)}</span>
-    </>
-  );
-}
-
-function renderPreviewSubtitle(subtitle: string) {
-  return subtitle.split(/([・/／])/).map((part, index) => {
-    const isSeparator = /[・/／]/.test(part);
-    const colorClass = isSeparator
-      ? "text-[#8a6b2f]"
-      : index % 4 === 0
-        ? "text-[#b82020]"
-        : "text-[#8a6b2f]";
-
-    return (
-      <span key={`${part}-${index}`} className={colorClass}>
-        {part}
-      </span>
-    );
-  });
 }
 
 export default function Home() {
@@ -407,12 +360,6 @@ export default function Home() {
   );
 
   const currentConfig = sheets[activeSheet];
-  const titleSubtitle =
-    currentConfig && (currentConfig.showTitleSubtitle ?? true)
-      ? currentConfig.titleSubtitle ?? DEFAULT_TITLE_SUBTITLE
-      : "";
-  const logoGgHeight = currentConfig?.logoGgHeight ?? 96;
-  const logoMtgHeight = currentConfig?.logoMtgHeight ?? 64;
   const totalCards = useMemo(
     () => sheets.reduce((count, sheet) => count + sheet.cards.length, 0),
     [sheets]
@@ -730,148 +677,17 @@ export default function Home() {
                     <div
                       ref={previewCanvasRef}
                       data-buylist-preview
-                      className="relative"
                       style={{
                         width: `${PREVIEW_CANVAS_WIDTH}px`,
                         transform: `scale(${previewScale})`,
                         transformOrigin: "top left",
-                        backgroundImage:
-                          "linear-gradient(135deg, rgba(121,96,53,0.05) 0 1px, transparent 1px 52px), linear-gradient(90deg, rgba(255,255,255,0.45), transparent 42%, rgba(153,118,54,0.08)), linear-gradient(180deg, #f4efe4 0%, #e7dfce 100%)",
-                        backgroundSize: "52px 52px, 100% 100%, 100% 100%",
                       }}
                     >
-                      <div className="flex items-center justify-between gap-6 border-b border-[#c5a64a]/70 bg-gradient-to-r from-[#fffaf0]/96 via-[#f3ead8]/96 to-[#fffaf0]/96 px-9 pb-[10px] pt-[12px] shadow-[0_12px_26px_rgba(83,58,20,0.12)]">
-                        <div className="flex shrink-0 items-center gap-4">
-                          {currentConfig.logoGg ? (
-                            <img
-                              src={currentConfig.logoGg}
-                              alt="ロゴ"
-                              style={{ height: `${logoGgHeight}px` }}
-                            />
-                          ) : (
-                            <div
-                              className="flex items-center justify-center rounded-[8px] border border-[#b9953b]/55 bg-[#fff8e6] font-black text-[#4b3211]"
-                              style={{
-                                width: `${logoGgHeight}px`,
-                                height: `${logoGgHeight}px`,
-                                fontSize: `${Math.max(18, Math.round(logoGgHeight * 0.27))}px`,
-                              }}
-                            >
-                              ロゴ
-                            </div>
-                          )}
-                          {currentConfig.logoMtg ? (
-                            <img
-                              src={currentConfig.logoMtg}
-                              alt="タイトルロゴ"
-                              style={{ height: `${logoMtgHeight}px` }}
-                            />
-                          ) : (
-                            <div
-                              className="flex items-center justify-center rounded-[8px] border border-[#b9953b]/55 bg-[#fff8e6] font-black text-[#4b3211]"
-                              style={{
-                                width: `${Math.round(logoMtgHeight * 2.25)}px`,
-                                height: `${logoMtgHeight}px`,
-                                fontSize: `${Math.max(16, Math.round(logoMtgHeight * 0.34))}px`,
-                              }}
-                            >
-                              タイトル
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex flex-1 justify-center">
-                          <div
-                            className="flex w-full items-start gap-4"
-                            style={{ maxWidth: `${TITLE_SHELL_WIDTH}px` }}
-                          >
-                            <div
-                              className="mt-[6px] rounded-full bg-[#b82020]"
-                              style={{
-                                width: `${TITLE_BAR_WIDTH}px`,
-                                height: `${TITLE_BAR_HEIGHT}px`,
-                              }}
-                            />
-                            <div className="min-w-0 text-left">
-                              <div
-                                className="mb-[6px] font-semibold uppercase tracking-[0.34em] text-[#8a6b2f]"
-                                style={{
-                                  fontFamily: KICKER_FONT_STACK,
-                                  fontSize: `${TITLE_KICKER_SIZE}px`,
-                                }}
-                              >
-                                BUYLIST BOARD
-                              </div>
-                              <div className="flex items-end gap-5">
-                                <div
-                                  className="whitespace-nowrap font-bold leading-none text-[#22201d]"
-                                  style={{
-                                    fontFamily: TITLE_FONT_STACK,
-                                    fontSize: `${TITLE_FONT_SIZE}px`,
-                                    letterSpacing: TITLE_TRACKING,
-                                  }}
-                                >
-                                  {renderPreviewTitle(currentConfig.title)}
-                                </div>
-                                {titleSubtitle && (
-                                  <div
-                                    className="mb-[11px] whitespace-nowrap border-l-[3px] border-[#b82020] pl-4 font-black tracking-[0.16em]"
-                                    style={{
-                                      fontFamily: KICKER_FONT_STACK,
-                                      fontSize: `${TITLE_SUBTITLE_SIZE}px`,
-                                    }}
-                                  >
-                                    {renderPreviewSubtitle(titleSubtitle)}
-                                  </div>
-                                )}
-                              </div>
-                              <div
-                                className="mt-3 rounded-full bg-[#b82020]"
-                                style={{
-                                  width: `${TITLE_RULE_WIDTH}px`,
-                                  height: `${TITLE_RULE_HEIGHT}px`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div
-                          className="shrink-0 bg-[#1e1b18] px-7 py-[14px] text-center shadow-[0_8px_22px_rgba(62,42,14,0.22)]"
-                          style={{
-                            minWidth: `${CTA_MIN_WIDTH}px`,
-                            borderRadius: `${CTA_RADIUS}px`,
-                            borderStyle: "solid",
-                            borderWidth: `${CTA_BORDER_WIDTH}px`,
-                            borderColor: "#c5a64a",
-                          }}
-                        >
-                          <div className="text-[24px] font-black tracking-[0.04em] text-[#f1d27a]">
-                            {currentConfig.ctaMain}
-                          </div>
-                          <div className="mt-1 text-[16px] font-medium text-white/90">
-                            {currentConfig.ctaSub}
-                          </div>
-                        </div>
-                      </div>
-                      <CardGrid
+                      <BuylistPreview
                         config={currentConfig}
-                        previewScale={previewScale}
                         onCardClick={setEditingCardIndex}
                         onReorder={handleReorder}
                       />
-
-                      <div className="px-9 pb-4 pt-1 text-center">
-                        <p className="text-[11px] font-bold text-[#3f3931]">
-                          {currentConfig.footerText}
-                        </p>
-                      </div>
-
-                      {currentConfig.updatedAtText && (
-                        <div className="absolute bottom-4 right-9 max-w-[420px] truncate rounded-[6px] border border-white/25 bg-black/60 px-4 py-2 text-[22px] font-semibold text-white/95 shadow-[0_6px_18px_rgba(0,0,0,0.22)] backdrop-blur-[1px]">
-                          {currentConfig.updatedAtText}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
