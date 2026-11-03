@@ -11,6 +11,8 @@ import SheetTabs from "@/components/SheetTabs";
 import BuylistPreview from "@/components/BuylistPreview";
 import CardEditor from "@/components/CardEditor";
 import SettingsPanel from "@/components/SettingsPanel";
+import OverflowCardList from "@/components/OverflowCardList";
+import { swapInOverflowCard } from "@/lib/overflow";
 import {
   SavedWork,
   buildSavedWork,
@@ -496,6 +498,28 @@ export default function Home() {
     [activeSheet, sheets]
   );
 
+  const handleSwapInOverflow = useCallback(
+    (overflowIndex: number) => {
+      const result = swapInOverflowCard(sheets[activeSheet], overflowIndex);
+      if (!result) return;
+
+      setSheets((current) =>
+        current.map((sheet, index) => (index === activeSheet ? result.config : sheet))
+      );
+      const inName = result.swappedIn.nameJp || result.swappedIn.nameEn;
+      const outName = result.swappedOut
+        ? result.swappedOut.nameJp || result.swappedOut.nameEn
+        : null;
+      setNotice({
+        tone: "success",
+        message: outName
+          ? `${inName} を掲載し、${outName} を掲載外に回しました。`
+          : `${inName} を掲載しました。`,
+      });
+    },
+    [activeSheet, sheets]
+  );
+
   const handleReorder = useCallback(
     (newSortedOrder: number[]) => {
       const nextSheets = [...sheets];
@@ -544,6 +568,7 @@ export default function Home() {
       ).length ?? 0,
     [currentConfig]
   );
+  const overflowCount = currentConfig?.overflowCards?.length ?? 0;
   const outputChecks = useMemo(() => {
     if (!currentConfig) return [];
 
@@ -588,8 +613,17 @@ export default function Home() {
             ? "収まりやすい長さです"
             : "長めです。右下表示の見切れを確認してください。",
       },
+      ...(overflowCount > 0
+        ? [
+            {
+              tone: "info" as NoticeTone,
+              label: "掲載外",
+              value: `${overflowCount}枚。プレビュー下の一覧から入れ替えできます。`,
+            },
+          ]
+        : []),
     ];
-  }, [currentConfig, missingImageCount, missingPriceCount]);
+  }, [currentConfig, missingImageCount, missingPriceCount, overflowCount]);
 
   useEffect(() => {
     const viewportNode = previewViewportRef.current;
@@ -900,6 +934,11 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+
+                <OverflowCardList
+                  cards={currentConfig.overflowCards ?? []}
+                  onSwapIn={handleSwapInOverflow}
+                />
 
                 <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-xs text-stone-500 shadow-sm">
                   {COPY.helper}

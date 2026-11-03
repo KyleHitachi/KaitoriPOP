@@ -86,8 +86,9 @@ const HEADER_ALIASES: Record<CardField, string[]> = {
   imageUrl: ["\u753b\u50cfURL", "Image URL", "ImageURL"],
 };
 
-const WARNING_TRUNCATED =
-  "\u30ab\u30fc\u30c9\u304c\u0033\u0036\u679a\u3092\u8d85\u3048\u305f\u305f\u3081\u3001\u4fa1\u683c\u304c\u9ad8\u3044\u0033\u0036\u679a\u306e\u307f\u8aad\u307f\u8fbc\u307f\u307e\u3057\u305f\u3002";
+function buildTruncatedWarning(overflowCount: number): string {
+  return `カードが${GRID_TOTAL}枚を超えたため、価格が高い${GRID_TOTAL}枚を掲載し、残り${overflowCount}枚は「掲載外のカード」に回しました。一覧から入れ替えできます。`;
+}
 
 function decodeCsvText(buffer: ArrayBuffer, encoding: string): string {
   return new TextDecoder(encoding as "utf-8", { fatal: false }).decode(
@@ -501,14 +502,16 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
       cardsFromHeaderRows ??
       buildCardsFromFixedColumns(matrixRows.slice(2), sheetName);
 
-    if (cards.length > GRID_TOTAL) {
+    const priceSortedCards = sortCardsByPriceDescending(cards);
+    const trimmedCards = priceSortedCards.slice(0, GRID_TOTAL);
+    const overflowCards = priceSortedCards.slice(GRID_TOTAL);
+
+    if (overflowCards.length > 0) {
       warnings.push({
         sheetName,
-        message: WARNING_TRUNCATED,
+        message: buildTruncatedWarning(overflowCards.length),
       });
     }
-
-    const trimmedCards = sortCardsByPriceDescending(cards).slice(0, GRID_TOTAL);
 
     sheets.push(sortSheet({
       sheetName,
@@ -516,6 +519,7 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
       titleSubtitle: DEFAULT_TITLE_SUBTITLE,
       showTitleSubtitle: true,
       cards: trimmedCards,
+      overflowCards,
       sortedOrder: trimmedCards.map((_, index) => index),
       rowLabels: [],
       showCardNames: false,

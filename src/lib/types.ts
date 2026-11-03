@@ -37,6 +37,8 @@ export interface SheetConfig {
   titleSubtitle?: string;
   showTitleSubtitle?: boolean;
   cards: Card[];
+  // Cards past the 36-card board, kept so they can be swapped in later.
+  overflowCards?: Card[];
   sortedOrder: number[];
   rowLabels: RowLabel[];
   showCardNames: boolean;
