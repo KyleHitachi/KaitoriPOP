@@ -12,6 +12,7 @@ import {
   GRID_TOTAL,
 } from "./types";
 import { resolveSpecialFoilBadge } from "./foil-badge";
+import { sortSheet } from "./sort-engine";
 
 export interface ParseWarning {
   sheetName: string;
@@ -509,7 +510,7 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
 
     const trimmedCards = sortCardsByPriceDescending(cards).slice(0, GRID_TOTAL);
 
-    sheets.push({
+    sheets.push(sortSheet({
       sheetName,
       title: DEFAULT_TITLE,
       titleSubtitle: DEFAULT_TITLE_SUBTITLE,
@@ -527,7 +528,7 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
       ctaSub: DEFAULT_CTA_SUB,
       footerText: DEFAULT_FOOTER,
       updatedAtText: DEFAULT_UPDATED_AT_TEXT,
-    });
+    }));
   }
 
   return { sheets, warnings };

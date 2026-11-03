@@ -4,7 +4,6 @@ import {
   GRID_COLS,
   GRID_ROWS,
   DEFAULT_TITLE_SUBTITLE,
-  HIGH_END_SHEET_NAMES,
 } from "./types";
 import { buildCardPlaceholderDataUrl, resolveCardImageSrc } from "./card-image";
 import { resolveFoilBadgeStyle, resolveSpecialFoilBadge } from "./foil-badge";
@@ -54,7 +53,7 @@ import {
   UPDATED_AT_PAD_Y,
   UPDATED_AT_RADIUS,
 } from "./layout-tokens";
-import { getSortedCards } from "./sort-engine";
+import { getSortedCards, isHighEndSheet } from "./sort-engine";
 
 const YEN_HTML = "&#20870;";
 
@@ -295,13 +294,15 @@ export function renderBuylistHtml(config: SheetConfig): string {
       ? config.titleSubtitle ?? DEFAULT_TITLE_SUBTITLE
       : "";
 
+  const highEndSheet = isHighEndSheet(config.sheetName, config.cards);
+
   for (let row = 0; row < GRID_ROWS; row++) {
     const rowLabel = config.rowLabels.find((label) => label.row === row);
     if (rowLabel) {
       rows.push(buildRowLabelHtml(rowLabel));
     }
 
-    const isP9Row = HIGH_END_SHEET_NAMES.includes(config.sheetName) && row === 0;
+    const isP9Row = highEndSheet && row === 0;
     const cells: string[] = [];
 
     for (let col = 0; col < GRID_COLS; col++) {

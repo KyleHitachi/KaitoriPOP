@@ -134,13 +134,21 @@ function sortEDH(cards: Card[]): Card[] {
   return [...sortWithinCategory(featured), ...sortWithinCategory(rest)];
 }
 
+// CSV imports are always named "Sheet1", so a P9 card also marks the sheet as high-end.
+export function isHighEndSheet(sheetName: string, cards: Card[]): boolean {
+  return (
+    matchesAny(sheetName, HIGH_END_SHEET_NAMES) ||
+    cards.some((card) => normalize(card.category) === "p9")
+  );
+}
+
 export function sortSheet(config: SheetConfig): SheetConfig {
   const { sheetName, cards } = config;
 
   let sortedCards: Card[];
   let rowLabels = config.rowLabels;
 
-  if (matchesAny(sheetName, HIGH_END_SHEET_NAMES)) {
+  if (isHighEndSheet(sheetName, cards)) {
     const result = sortHighEnd(cards);
     sortedCards = result.sorted;
     rowLabels = result.rowLabels;

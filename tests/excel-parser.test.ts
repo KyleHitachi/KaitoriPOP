@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as XLSX from "xlsx";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { parseExcel } from "../src/lib/excel-parser";
 
 function buildWorkbook(rows: unknown[][], sheetName = "High End"): ArrayBuffer {
@@ -490,4 +492,45 @@ test("parseExcel initializes display order by highest price first", () => {
     result.sheets[0].cards.map((card) => card.nameEn),
     ["High", "Mid", "Low"]
   );
+});
+
+test("parseExcel applies the category sort to csv imports with P9 cards", () => {
+  const csv = readFileSync(join(process.cwd(), "sample-buylist.csv"));
+  const buffer = csv.buffer.slice(csv.byteOffset, csv.byteOffset + csv.byteLength);
+
+  const sheet = parseExcel(buffer, "sample-buylist.csv").sheets[0];
+  const sorted = sheet.sortedOrder.map((index) => sheet.cards[index]);
+
+  assert.deepEqual(sheet.rowLabels, [{ row: 0, text: "POWER 9", visible: true }]);
+  assert.deepEqual(
+    sorted.slice(0, 8).map((card) => card.category),
+    Array(8).fill("P9")
+  );
+
+  const dualLandSets = sorted
+    .filter((card) => card.category === "デュアルランド")
+    .map((card) => card.set);
+  const firstSet = dualLandSets[0];
+  const switchIndex = dualLandSets.findIndex((set) => set !== firstSet);
+  assert.ok(
+    dualLandSets.slice(switchIndex).every((set) => set !== firstSet),
+    "dual lands stay grouped by set"
+  );
+});
+
+test("parseExcel orders categories by the sheet category order", () => {
+  const buffer = buildWorkbook(
+    [
+      ["No", "日本語名", "英語名", "セット", "言語", "状態", "JP価格", "EN価格", "カテゴリ"],
+      [1, "土地", "Fetch", "SET", "JP", "NM", 9000, null, "フェッチランド"],
+      [2, "呪文", "Spell", "SET", "JP", "NM", 3000, null, "モダン"],
+    ],
+    "モダン・レガシー"
+  );
+
+  const sheet = parseExcel(buffer).sheets[0];
+  const sortedNames = sheet.sortedOrder.map((index) => sheet.cards[index].nameEn);
+
+  assert.deepEqual(sheet.rowLabels, []);
+  assert.deepEqual(sortedNames, ["Spell", "Fetch"]);
 });
