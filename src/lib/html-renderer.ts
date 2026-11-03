@@ -54,7 +54,7 @@ import {
   UPDATED_AT_PAD_Y,
   UPDATED_AT_RADIUS,
 } from "./layout-tokens";
-import { getSortedCards } from "./sort-engine";
+import { buildGridSlots } from "./event-sheet-policy";
 
 const YEN_HTML = "&#20870;";
 
@@ -277,11 +277,21 @@ function buildFooterHtml(footerText: string): string {
   return escapeHtml(footerText).replace(/\*/g, '<span class="footer-note">*</span>');
 }
 
+function buildMtgCardBackHtml(): string {
+  return `<div class="cell cell-mtg-card-back">
+    <div class="mtg-card-back-frame">
+      <div class="mtg-card-back-inner">
+        <img src="/mtg-card-back.png" alt="MAGIC: THE GATHERING card back" />
+      </div>
+    </div>
+  </div>`;
+}
+
 const PANEL_PATTERN =
   "linear-gradient(135deg, rgba(121,96,53,0.05) 0 1px, transparent 1px 52px), linear-gradient(90deg, rgba(255,255,255,0.45), transparent 42%, rgba(153,118,54,0.08)), linear-gradient(180deg, #f4efe4 0%, #e7dfce 100%)";
 
 export function renderBuylistHtml(config: SheetConfig): string {
-  const sortedCards = getSortedCards(config);
+  const slots = buildGridSlots(config);
   const rows: string[] = [];
   const showCardNames = config.showCardNames ?? false;
   const showExpansionName = config.showExpansionName ?? true;
@@ -305,9 +315,10 @@ export function renderBuylistHtml(config: SheetConfig): string {
 
     for (let col = 0; col < GRID_COLS; col++) {
       const index = row * GRID_COLS + col;
-      if (index < sortedCards.length) {
+      const slot = slots[index];
+      if (slot.kind === "card") {
         cells.push(
-          buildCardHtml(sortedCards[index], {
+          buildCardHtml(slot.card, {
             isP9Row,
             isLotus: isP9Row && col === 0,
             showCardNames,
@@ -316,6 +327,8 @@ export function renderBuylistHtml(config: SheetConfig): string {
             showCondition,
           })
         );
+      } else if (slot.kind === "mtg-card-back") {
+        cells.push(buildMtgCardBackHtml());
       } else {
         cells.push('<div class="cell cell-empty"></div>');
       }
@@ -548,6 +561,29 @@ body {
 }
 .cell-empty {
   visibility: hidden;
+}
+.mtg-card-back-frame {
+  overflow: hidden;
+  border-radius: 9px;
+  padding: 3px;
+  background: linear-gradient(180deg, #e9c86f 0%, #b9892f 48%, #72501f 100%);
+  box-shadow: 0 10px 24px rgba(72, 52, 24, 0.2);
+}
+.mtg-card-back-inner {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--gold-border);
+  background: #000;
+}
+.mtg-card-back-inner img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .frame {
   overflow: hidden;

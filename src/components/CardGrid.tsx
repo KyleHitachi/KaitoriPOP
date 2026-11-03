@@ -14,8 +14,9 @@ import {
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import { SheetConfig, GRID_COLS, GRID_ROWS, HIGH_END_SHEET_NAMES } from "@/lib/types";
 import { GRID_GAP, GRID_SIDE_PADDING, ROW_LABEL_GAP } from "@/lib/layout-tokens";
-import { getSortedCards } from "@/lib/sort-engine";
+import { buildGridSlots } from "@/lib/event-sheet-policy";
 import SortableCard from "./SortableCard";
+import MtgCardBack from "./MtgCardBack";
 
 interface Props {
   config: SheetConfig;
@@ -35,7 +36,7 @@ export default function CardGrid({
   onCardClick,
   onReorder,
 }: Props) {
-  const sortedCards = getSortedCards(config);
+  const slots = buildGridSlots(config);
   const itemIds = useMemo(
     () => config.sortedOrder.map((originalIndex) => `card-${originalIndex}`),
     [config.sortedOrder]
@@ -72,13 +73,13 @@ export default function CardGrid({
 
     for (let col = 0; col < GRID_COLS; col++) {
       const index = row * GRID_COLS + col;
-      if (index < sortedCards.length) {
-        const originalIndex = config.sortedOrder[index];
+      const slot = slots[index];
+      if (slot.kind === "card") {
         cells.push(
           <SortableCard
             key={itemIds[index]}
             id={itemIds[index]}
-            card={sortedCards[index]}
+            card={slot.card}
             showCardNames={config.showCardNames}
             showExpansionName={config.showExpansionName}
             showRarityBadge={config.showRarityBadge}
@@ -86,9 +87,11 @@ export default function CardGrid({
             previewScale={previewScale}
             isP9Row={isP9Row}
             isLotus={isP9Row && col === 0}
-            onClick={() => onCardClick?.(originalIndex)}
+            onClick={() => onCardClick?.(slot.originalIndex)}
           />
         );
+      } else if (slot.kind === "mtg-card-back") {
+        cells.push(<MtgCardBack key={`mtg-card-back-${row}-${col}`} />);
       } else {
         cells.push(
           <div key={`empty-${row}-${col}`} className="flex-1 invisible" />

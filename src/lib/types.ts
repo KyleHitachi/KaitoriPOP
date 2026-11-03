@@ -31,6 +31,8 @@ export interface RowLabel {
   visible: boolean;
 }
 
+export type SortMode = "price-desc" | "excel" | "custom";
+
 export interface SheetConfig {
   sheetName: string;
   title: string;
@@ -38,6 +40,8 @@ export interface SheetConfig {
   showTitleSubtitle?: boolean;
   cards: Card[];
   sortedOrder: number[];
+  excelOrder?: number[];
+  sortMode?: SortMode;
   rowLabels: RowLabel[];
   showCardNames: boolean;
   showExpansionName: boolean;

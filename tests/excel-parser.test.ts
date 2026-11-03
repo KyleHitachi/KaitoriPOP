@@ -10,6 +10,20 @@ function buildWorkbook(rows: unknown[][], sheetName = "High End"): ArrayBuffer {
   return XLSX.write(workbook, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
 }
 
+function buildWorkbookWithSheets(
+  sheets: Array<{ name: string; rows: unknown[][] }>
+): ArrayBuffer {
+  const workbook = XLSX.utils.book_new();
+  for (const sheet of sheets) {
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.aoa_to_sheet(sheet.rows),
+      sheet.name
+    );
+  }
+  return XLSX.write(workbook, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+}
+
 function encodeUtf8(text: string): ArrayBuffer {
   const bytes = new TextEncoder().encode(text);
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
@@ -33,6 +47,32 @@ test("parseExcel reads header-based rows and keeps Japanese values", () => {
   assert.equal(result.sheets[0].showExpansionName, true);
   assert.equal(result.sheets[0].showRarityBadge, false);
   assert.equal(result.sheets[0].showCondition, true);
+});
+
+test("parseExcel derives EN and IT price labels from the language column", () => {
+  const buffer = buildWorkbook([
+    ["No", "日本語名", "英語名", "セット", "言語", "状態", "JP価格", "EN価格", "カテゴリ", "備考", "画像URL"],
+    [
+      1,
+      "The Tabernacle at Pendrell Vale",
+      "The Tabernacle at Pendrell Vale",
+      "LEG",
+      "EN/IT",
+      "SP",
+      380000,
+      195000,
+      "再録禁止 / 英語・イタリア語",
+      "通常版（EN/IT価格併記）",
+      "https://example.com/tabernacle.jpg",
+    ],
+  ]);
+
+  const card = parseExcel(buffer).sheets[0].cards[0];
+
+  assert.equal(card.priceJp, 380000);
+  assert.equal(card.priceJpLabel, "EN");
+  assert.equal(card.priceEn, 195000);
+  assert.equal(card.priceEnLabel, "IT");
 });
 
 test("parseExcel reads Lorcana rarity from header-based rows", () => {
@@ -72,6 +112,7 @@ test("parseExcel reads Lorcana rarity from header-based rows", () => {
   assert.equal(result.sheets[0].cards[0].rarity, "エンチャンテッド");
   assert.equal(result.sheets[0].cards[0].set, "TFC");
   assert.equal(result.sheets[0].cards[0].condition, "NM");
+  assert.equal(result.sheets[0].showRarityBadge, true);
 });
 
 test("parseExcel detects silver scroll foil from notes", () => {
@@ -489,5 +530,30 @@ test("parseExcel initializes display order by highest price first", () => {
   assert.deepEqual(
     result.sheets[0].cards.map((card) => card.nameEn),
     ["High", "Mid", "Low"]
+  );
+
+  assert.equal(result.sheets[0].sortMode, "price-desc");
+  assert.deepEqual(
+    (result.sheets[0].excelOrder ?? []).map((index) => result.sheets[0].cards[index].nameEn),
+    ["Low", "High", "Mid"]
+  );
+});
+
+test("parseExcel shows condition badges only on the first two sheets", () => {
+  const rows = [
+    ["No", "日本語名", "英語名", "セット", "言語", "状態", "JP価格", "EN価格", "カテゴリ"],
+    [1, "カード", "Card", "SET", "JP", "SP", 1000, null, "Standard"],
+  ];
+  const buffer = buildWorkbookWithSheets([
+    { name: "01_再録禁止HighEnd", rows },
+    { name: "02_Dual Lands", rows },
+    { name: "03_HOB・SOA Silver", rows },
+  ]);
+
+  const result = parseExcel(buffer);
+
+  assert.deepEqual(
+    result.sheets.map((sheet) => sheet.showCondition),
+    [true, true, false]
   );
 });

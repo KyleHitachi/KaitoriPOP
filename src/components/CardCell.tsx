@@ -182,6 +182,7 @@ export default function CardCell({
 
           {showCondition && (
             <div
+              data-condition-chip="true"
               className="absolute left-[6px] top-[6px] z-[4] border font-black text-[#3c2b14] backdrop-blur-[1px]"
               style={{
                 background:

@@ -6,7 +6,14 @@ import {
   Card,
   GRID_TOTAL,
   DEFAULT_TITLE_SUBTITLE,
+  SortMode,
 } from "@/lib/types";
+import { applySortMode } from "@/lib/sort-engine";
+import {
+  applyAppearanceToAllSheets,
+  shouldShowConditionForSheetIndex,
+} from "@/lib/event-sheet-policy";
+import type { SheetAppearanceSettings } from "@/lib/event-sheet-policy";
 import {
   CTA_BORDER_WIDTH,
   CTA_MIN_WIDTH,
@@ -387,6 +394,7 @@ export default function Home() {
       nextSheets[activeSheet] = {
         ...nextSheets[activeSheet],
         sortedOrder: newSortedOrder,
+        sortMode: "custom",
       };
       setSheets(nextSheets);
       setNotice({
@@ -397,13 +405,48 @@ export default function Home() {
     [activeSheet, sheets]
   );
 
+  const handleSortModeChange = useCallback(
+    (mode: Exclude<SortMode, "custom">) => {
+      const nextSheets = [...sheets];
+      nextSheets[activeSheet] = applySortMode(nextSheets[activeSheet], mode);
+      setSheets(nextSheets);
+      setNotice({
+        tone: "info",
+        message:
+          mode === "excel"
+            ? "Excelの並び順に切り替えました。"
+            : "価格が高い順に切り替えました。",
+      });
+    },
+    [activeSheet, sheets]
+  );
+
   const handleConfigUpdate = useCallback(
     (updates: Partial<SheetConfig>) => {
       const nextSheets = [...sheets];
-      nextSheets[activeSheet] = { ...nextSheets[activeSheet], ...updates };
+      nextSheets[activeSheet] = {
+        ...nextSheets[activeSheet],
+        ...updates,
+        ...(Object.prototype.hasOwnProperty.call(updates, "showCondition")
+          ? { showCondition: shouldShowConditionForSheetIndex(activeSheet) }
+          : {}),
+      };
       setSheets(nextSheets);
     },
     [activeSheet, sheets]
+  );
+
+  const handleApplyPresetToAll = useCallback(
+    (settings: SheetAppearanceSettings) => {
+      setSheets((currentSheets) =>
+        applyAppearanceToAllSheets(currentSheets, settings)
+      );
+      setNotice({
+        tone: "success",
+        message: "プリセットを全シートへ反映しました。",
+      });
+    },
+    []
   );
 
   const currentConfig = sheets[activeSheet];
@@ -687,6 +730,43 @@ export default function Home() {
                     )}
                     {generating ? COPY.generating : COPY.exportPng}
                   </button>
+                  <div
+                    role="group"
+                    aria-label="並び順"
+                    className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1"
+                  >
+                    <span className="px-2 text-[11px] font-black text-stone-500">
+                      並び順
+                    </span>
+                    {[
+                      { label: "価格順", value: "price-desc" as const },
+                      { label: "Excel順", value: "excel" as const },
+                    ].map((option) => {
+                      const isActive =
+                        (currentConfig.sortMode ?? "price-desc") === option.value;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          aria-pressed={isActive}
+                          onClick={() => handleSortModeChange(option.value)}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                            isActive
+                              ? "bg-stone-900 text-white"
+                              : "text-stone-600 hover:bg-white"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                    {currentConfig.sortMode === "custom" && (
+                      <span className="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-900">
+                        手動調整
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1">
                     {[
                       { label: COPY.zoomFit, value: "fit" as PreviewZoom },
@@ -887,6 +967,8 @@ export default function Home() {
                     <SettingsPanel
                       config={currentConfig}
                       onChange={handleConfigUpdate}
+                      onApplyToAll={handleApplyPresetToAll}
+                      conditionPolicyValue={shouldShowConditionForSheetIndex(activeSheet)}
                     />
                   </div>
                 </div>

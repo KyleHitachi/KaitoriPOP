@@ -6,6 +6,7 @@ import {
   HIGH_END_CATEGORY_NAMES,
   DUAL_LAND_CATEGORY_NAMES,
   EDH_FEATURED_CATEGORY_NAMES,
+  SortMode,
 } from "./types";
 
 function normalize(value: string): string {
@@ -14,6 +15,13 @@ function normalize(value: string): string {
 
 function maxPrice(card: Card): number {
   return Math.max(card.priceJp ?? 0, card.priceEn ?? 0);
+}
+
+export function buildPriceDescendingOrder(cards: Card[]): number[] {
+  return cards
+    .map((card, index) => ({ index, price: maxPrice(card) }))
+    .sort((left, right) => right.price - left.price || left.index - right.index)
+    .map((item) => item.index);
 }
 
 function isLand(card: Card): boolean {
@@ -176,6 +184,24 @@ export function sortSheet(config: SheetConfig): SheetConfig {
     ...config,
     sortedOrder,
     rowLabels,
+  };
+}
+
+export function applySortMode(
+  config: SheetConfig,
+  mode: Exclude<SortMode, "custom">
+): SheetConfig {
+  const excelOrder =
+    config.excelOrder ?? config.cards.map((_, index) => index);
+  const sortedOrder =
+    mode === "excel"
+      ? [...excelOrder]
+      : buildPriceDescendingOrder(config.cards);
+
+  return {
+    ...config,
+    sortedOrder,
+    sortMode: mode,
   };
 }
 

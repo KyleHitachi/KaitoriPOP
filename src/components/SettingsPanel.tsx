@@ -2,44 +2,28 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { RowLabel, SheetConfig } from "@/lib/types";
+import { SheetConfig } from "@/lib/types";
+import type { SheetAppearanceSettings } from "@/lib/event-sheet-policy";
 
 interface Props {
   config: SheetConfig;
   onChange: (updates: Partial<SheetConfig>) => void;
-}
-
-interface SheetPresetSettings {
-  title: string;
-  titleSubtitle?: string;
-  showTitleSubtitle?: boolean;
-  ctaMain: string;
-  ctaSub: string;
-  footerText: string;
-  updatedAtText: string;
-  showCardNames: boolean;
-  showExpansionName: boolean;
-  showRarityBadge: boolean;
-  showCondition: boolean;
-  logoGg?: string;
-  logoMtg?: string;
-  logoGgHeight?: number;
-  logoMtgHeight?: number;
-  rowLabels: RowLabel[];
+  onApplyToAll: (settings: SheetAppearanceSettings) => void;
+  conditionPolicyValue: boolean;
 }
 
 interface SheetPreset {
   id: string;
   name: string;
   createdAt: string;
-  settings: SheetPresetSettings;
+  settings: SheetAppearanceSettings;
 }
 
 const PRESET_STORAGE_KEY = "kaitori-pop-sheet-presets";
 const LOGO_MAX_SOURCE_SIZE = 180_000;
 const LOGO_MAX_DIMENSION = 900;
 
-function extractPresetSettings(config: SheetConfig): SheetPresetSettings {
+function extractPresetSettings(config: SheetConfig): SheetAppearanceSettings {
   return {
     title: config.title,
     titleSubtitle: config.titleSubtitle,
@@ -189,7 +173,12 @@ function Section({
   );
 }
 
-export default function SettingsPanel({ config, onChange }: Props) {
+export default function SettingsPanel({
+  config,
+  onChange,
+  onApplyToAll,
+  conditionPolicyValue,
+}: Props) {
   const [presets, setPresets] = useState<SheetPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [presetName, setPresetName] = useState("");
@@ -265,6 +254,21 @@ export default function SettingsPanel({ config, onChange }: Props) {
     setPresetMessage("プリセットを反映しました。");
   };
 
+  const applyPresetToAll = () => {
+    const preset = presets.find((item) => item.id === selectedPresetId);
+    if (!preset) {
+      setPresetMessage("全シートへ反映するプリセットを選択してください。");
+      return;
+    }
+
+    onApplyToAll({
+      ...preset.settings,
+      rowLabels: preset.settings.rowLabels.map((label) => ({ ...label })),
+    });
+    setPresetName(preset.name);
+    setPresetMessage("プリセットを全シートへ反映しました。状態表示は先頭2シートだけ維持します。");
+  };
+
   const deletePreset = () => {
     const nextPresets = presets.filter((item) => item.id !== selectedPresetId);
     writePresets(nextPresets);
@@ -331,6 +335,15 @@ export default function SettingsPanel({ config, onChange }: Props) {
               呼び出し
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={applyPresetToAll}
+            disabled={!selectedPresetId}
+            className="mt-2 w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-950 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            全シートへ反映
+          </button>
 
           <div className="mt-2 flex items-center justify-between gap-3">
             <p className="settings-preset-help text-xs leading-relaxed text-stone-700">
@@ -504,10 +517,8 @@ export default function SettingsPanel({ config, onChange }: Props) {
         <label className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
           <input
             type="checkbox"
-            checked={config.showCondition}
-            onChange={(event) =>
-              onChange({ showCondition: event.target.checked })
-            }
+            checked={conditionPolicyValue}
+            disabled
             className="mt-1"
           />
           <span>
@@ -515,7 +526,7 @@ export default function SettingsPanel({ config, onChange }: Props) {
               状態表記を表示
             </span>
             <span className="mt-1 block text-xs text-stone-500">
-              カード左上のNM/SPなどの状態チップを切り替えます。
+              催事設定により、先頭2シートだけにNM/SPなどの状態チップを表示します。
             </span>
           </span>
         </label>

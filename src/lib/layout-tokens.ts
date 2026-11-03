@@ -30,6 +30,8 @@ export const ROW_LABEL_GAP = 10;
 
 export const PREVIEW_CANVAS_WIDTH = 1920;
 export const PREVIEW_CANVAS_HEIGHT = 1080;
+export const EXPORT_CANVAS_WIDTH = 1920;
+export const EXPORT_CANVAS_HEIGHT = 1355;
 
 export const CARD_OVERLAY_HEIGHT_WITH_NAMES = "52%";
 export const CARD_OVERLAY_HEIGHT_NO_NAMES = "40%";

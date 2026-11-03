@@ -11,6 +11,7 @@ import {
   DEFAULT_UPDATED_AT_TEXT,
   GRID_TOTAL,
 } from "./types";
+import { shouldShowConditionForSheetIndex } from "./event-sheet-policy";
 import { resolveSpecialFoilBadge } from "./foil-badge";
 
 export interface ParseWarning {
@@ -166,7 +167,7 @@ interface ParsedPriceCell {
 
 function normalizePriceLabel(value: string): string | undefined {
   const normalized = value.normalize("NFKC").trim().toUpperCase();
-  if (normalized === "NF" || normalized === "RF" || normalized === "CF") {
+  if (["NF", "RF", "CF", "EN", "IT"].includes(normalized)) {
     return normalized;
   }
   return undefined;
@@ -174,6 +175,17 @@ function normalizePriceLabel(value: string): string | undefined {
 
 function inferPriceLabelFromHeader(value: unknown): string | undefined {
   return normalizePriceLabel(String(value ?? ""));
+}
+
+function inferPriceLabelsFromLanguage(
+  value: unknown
+): [string | undefined, string | undefined] {
+  const [first, second] = String(value ?? "")
+    .normalize("NFKC")
+    .split("/")
+    .map((part) => normalizePriceLabel(part));
+
+  return [first, second];
 }
 
 function parsePrice(value: unknown): number | null {
@@ -384,13 +396,16 @@ function buildCardsFromHeaderRows(
   for (const row of rows.slice(headerInfo.headerRowIndex + 1)) {
     const no = Number(valueAt(row, headerInfo.columnMap.no));
     if (Number.isNaN(no) || no === 0) continue;
+    const language = valueAt(row, headerInfo.columnMap.lang);
+    const [priceJpLanguageLabel, priceEnLanguageLabel] =
+      inferPriceLabelsFromLanguage(language);
     const priceJp = parsePriceCell(
       valueAt(row, headerInfo.columnMap.priceJp),
-      priceJpHeaderLabel
+      priceJpHeaderLabel ?? priceJpLanguageLabel
     );
     const priceEn = parsePriceCell(
       valueAt(row, headerInfo.columnMap.priceEn),
-      priceEnHeaderLabel
+      priceEnHeaderLabel ?? priceEnLanguageLabel
     );
 
     cards.push(
@@ -401,7 +416,7 @@ function buildCardsFromHeaderRows(
           nameEn: String(valueAt(row, headerInfo.columnMap.nameEn) ?? ""),
           set: String(valueAt(row, headerInfo.columnMap.set) ?? ""),
           rarity: String(valueAt(row, headerInfo.columnMap.rarity) ?? ""),
-          lang: String(valueAt(row, headerInfo.columnMap.lang) ?? "EN"),
+          lang: String(language ?? "EN"),
           condition: String(valueAt(row, headerInfo.columnMap.condition) ?? "NM"),
           priceJp: priceJp.price,
           priceEn: priceEn.price,
@@ -482,12 +497,22 @@ function sortCardsByPriceDescending(cards: Card[]): Card[] {
   return buildPriceDescendingOrder(cards).map((index) => cards[index]);
 }
 
+function buildExcelOrder(sourceCards: Card[], selectedCards: Card[]): number[] {
+  const selectedIndexById = new Map(
+    selectedCards.map((card, index) => [card.id, index])
+  );
+
+  return sourceCards
+    .map((card) => selectedIndexById.get(card.id))
+    .filter((index): index is number => index !== undefined);
+}
+
 export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult {
   const workbook = readWorkbook(buffer, fileName);
   const sheets: SheetConfig[] = [];
   const warnings: ParseWarning[] = [];
 
-  for (const sheetName of workbook.SheetNames) {
+  for (const [sheetIndex, sheetName] of workbook.SheetNames.entries()) {
     const sheet = workbook.Sheets[sheetName];
     const matrixRows = XLSX.utils.sheet_to_json(sheet, {
       header: 1,
@@ -508,6 +533,8 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
     }
 
     const trimmedCards = sortCardsByPriceDescending(cards).slice(0, GRID_TOTAL);
+    const excelOrder = buildExcelOrder(cards, trimmedCards);
+    const hasRarityValues = trimmedCards.some((card) => card.rarity.trim() !== "");
 
     sheets.push({
       sheetName,
@@ -516,11 +543,13 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
       showTitleSubtitle: true,
       cards: trimmedCards,
       sortedOrder: trimmedCards.map((_, index) => index),
+      excelOrder,
+      sortMode: "price-desc",
       rowLabels: [],
       showCardNames: false,
       showExpansionName: true,
-      showRarityBadge: false,
-      showCondition: true,
+      showRarityBadge: hasRarityValues,
+      showCondition: shouldShowConditionForSheetIndex(sheetIndex),
       logoGgHeight: 96,
       logoMtgHeight: 64,
       ctaMain: DEFAULT_CTA_MAIN,
