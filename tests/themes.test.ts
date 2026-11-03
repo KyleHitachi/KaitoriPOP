@@ -70,50 +70,10 @@ test("the renderer applies theme variables, fonts and the title highlight", () =
   const html = renderBuylistHtml(sheet);
 
   assert.equal(sheet.theme, "lorcana");
-  assert.match(html, /--accent: #B97F2C;/);
+  assert.match(html, /--accent: #D89E47;/);
   assert.match(html, /fonts\.googleapis\.com\/css2\?family=Barlow\+Condensed/);
   assert.match(html, /<span class="title-highlight">ロルカナ<\/span> 買取表/);
 
   const classic = renderBuylistHtml({ ...sheet, theme: undefined });
   assert.doesNotMatch(classic, /fonts\.googleapis/);
-});
-
-test("official themes keep prices over the card with a cleaner finish; classic is unchanged", () => {
-  const cards = [card({ id: "a", condition: "SP", set: "LEA" })];
-  const base = {
-    sheetName: "Sheet1",
-    title: "MTG 買取表",
-    cards,
-    sortedOrder: [0],
-    rowLabels: [],
-    showCardNames: false,
-    showExpansionName: true,
-    showRarityBadge: false,
-    showCondition: true,
-    ctaMain: "高価買取中",
-    ctaSub: "店頭でそのまま査定できます",
-    footerText: "* 掲載価格は参考価格です。",
-    updatedAtText: "",
-  };
-
-  for (const theme of ["mtg", "fab", "lorcana"] as const) {
-    assert.equal(THEMES[theme].layout, "editorial");
-    const html = renderBuylistHtml({ ...base, theme });
-    assert.match(html, /data-layout="editorial"/);
-    assert.match(html, /<div class="band-meta"><span class="band-left"><span class="band-cond">SP<\/span><\/span><span class="band-set">EN \/ LEA<\/span><\/div>/);
-    // Foil becomes a tag beside the condition instead of a badge on the art.
-    const foilHtml = renderBuylistHtml({ ...base, theme, cards: [{ ...cards[0], foil: true }] });
-    assert.match(foilHtml, /<span class="band-tag"[^>]*>FOIL<\/span>/);
-    assert.doesNotMatch(foilHtml, /class="badge-stack"/);
-    // Prices stay over the card; the condition moves off the card name.
-    assert.match(html, /<div class="bot">/);
-    assert.doesNotMatch(html, /class="condition-chip"/);
-    // Empty logo slots are left out instead of showing placeholders.
-    assert.doesNotMatch(html, /logo-placeholder">ロゴ/);
-  }
-
-  const classic = renderBuylistHtml(base);
-  assert.match(classic, /data-layout="classic"/);
-  assert.match(classic, /<div class="bot">/);
-  assert.match(classic, /class="condition-chip"/);
 });

@@ -194,7 +194,6 @@ function buildCardHtml(
     showExpansionName: boolean;
     showRarityBadge: boolean;
     showCondition: boolean;
-    editorial: boolean;
   }
 ): string {
   const foil = card.foilOverride ?? card.foil;
@@ -236,9 +235,16 @@ function buildCardHtml(
                 </div>`
       : "";
 
-  const badgeStackHtml =
-    foil || (options.showRarityBadge && rarity && rarityStyle)
-      ? `<div class="badge-stack">
+  return `
+    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}" data-card-id="${escapeHtml(card.id)}">
+      <div class="${frameClasses}">
+        <div class="frame-inner">
+          <img src="${escapeHtml(imgSrc)}" alt="${imageAlt}" onerror="this.onerror=null;this.setAttribute('data-fallback',this.getAttribute('src'));this.src='${escapeHtml(fallbackSrc)}';" />
+          <div class="frame-top-glow"></div>
+          ${options.showCondition ? `<div class="condition-chip">${escapeHtml(card.condition)}</div>` : ""}
+          ${
+            foil || (options.showRarityBadge && rarity && rarityStyle)
+              ? `<div class="badge-stack">
                 ${
                   foilBadge
                     ? `<div class="foil-badge" style="background:${foilStyle.background};border:${foilStyle.border};box-shadow:${foilStyle.shadow};">${foilBadgeLines.length > 1 ? `<div class="foil-badge-special">${foilBadgeTextHtml}</div>` : foilBadgeTextHtml}</div>`
@@ -250,49 +256,8 @@ function buildCardHtml(
                     : ""
                 }
               </div>`
-      : "";
-  const imageHtml = `<img src="${escapeHtml(imgSrc)}" alt="${imageAlt}" onerror="this.onerror=null;this.setAttribute('data-fallback',this.getAttribute('src'));this.src='${escapeHtml(fallbackSrc)}';" />`;
-
-  if (options.editorial) {
-    // Foil and rarity become small tags beside the condition, so nothing
-    // sits on the art people recognise the card by.
-    const tags = [
-      foilBadge
-        ? `<span class="band-tag" style="color:${foilStyle.textColor};">${escapeHtml(foilBadgeLines.join(" "))}</span>`
-        : "",
-      options.showRarityBadge && rarity && rarityStyle
-        ? `<span class="band-tag" style="background:${rarityStyle.textBackground};color:${rarityStyle.textColor ?? "inherit"};${rarityStyle.textBackground === "none" ? "" : "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"}">${escapeHtml(rarity)}</span>`
-        : "",
-    ].join("");
-    const leftHtml = `${options.showCondition ? `<span class="band-cond">${escapeHtml(card.condition)}</span>` : ""}${tags}`;
-    const setHtml = options.showExpansionName
-      ? `<span class="band-set">${escapeHtml(buildSetLabel(card))}</span>`
-      : "";
-    return `
-    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}" data-card-id="${escapeHtml(card.id)}">
-      <div class="${frameClasses}">
-        <div class="frame-inner">
-          ${imageHtml}
-          <div class="bot">
-            <div class="bot-inner">
-              ${leftHtml || setHtml ? `<div class="band-meta"><span class="band-left">${leftHtml}</span>${setHtml}</div>` : ""}
-              ${nameBlockHtml}
-              <div class="band-prices">${buildPriceHtml(card)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  return `
-    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}" data-card-id="${escapeHtml(card.id)}">
-      <div class="${frameClasses}">
-        <div class="frame-inner">
-          ${imageHtml}
-          <div class="frame-top-glow"></div>
-          ${options.showCondition ? `<div class="condition-chip">${escapeHtml(card.condition)}</div>` : ""}
-          ${badgeStackHtml}
+              : ""
+          }
           <div class="bot">
             <div class="bot-inner">
               ${options.showExpansionName ? `<div class="set">${escapeHtml(buildSetLabel(card))}</div>` : ""}
@@ -322,215 +287,6 @@ function buildFooterHtml(footerText: string): string {
 const PANEL_PATTERN =
   "linear-gradient(135deg, rgba(121,96,53,0.05) 0 1px, transparent 1px 52px), linear-gradient(90deg, rgba(255,255,255,0.45), transparent 42%, rgba(153,118,54,0.08)), linear-gradient(180deg, #f4efe4 0%, #e7dfce 100%)";
 
-const EDITORIAL_CSS = String.raw`
-/* Game themes keep the classic board and change only what read as UI
-   chrome: no boxed buttons or chips, and a price band lined up across the
-   row in the game's dark colour. */
-.panel {
-  --rule: color-mix(in srgb, var(--title-ink) 16%, transparent);
-  --band-soft: color-mix(in srgb, var(--band-ink) 62%, transparent);
-}
-/* In a fixed canvas only the page paints the background, so a board that
-   does not fill the canvas shows no seam. */
-.page .panel {
-  background: none;
-}
-/* Heading: title on the left, call to action on the right, both plain
-   type. No bars, rules or separators (they read as drawn UI). */
-.hdr {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: end;
-  gap: 28px;
-  padding: 26px 36px 14px;
-}
-.hdr-logos:empty {
-  display: none;
-}
-.title {
-  justify-content: flex-start;
-}
-.title-shell {
-  width: auto;
-}
-.title-bar,
-.title-rule {
-  display: none;
-}
-/* "BUYLIST BOARD" only repeats the title. */
-.title-kicker {
-  display: none;
-}
-.title-subtitle {
-  margin-bottom: 10px;
-  border-left: 0;
-  padding-left: 0;
-  color: var(--muted);
-  font-weight: 700;
-}
-.title-subtitle span {
-  color: inherit;
-}
-.hdr-cta {
-  min-width: 0;
-  border: 0;
-  border-radius: 0;
-  padding: 0 0 6px;
-  background: none;
-  box-shadow: none;
-  text-align: right;
-}
-.hdr-cta .cta-main {
-  color: var(--cta-main);
-  font-family: var(--title-font);
-  font-size: 36px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.04em;
-}
-.hdr-cta .cta-sub {
-  margin-top: 6px;
-  color: var(--cta-sub);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-.bot {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    color-mix(in srgb, var(--band) 90%, transparent) 10%,
-    color-mix(in srgb, var(--band) 98.5%, transparent) 22%,
-    var(--band) 100%
-  );
-}
-.bot-inner {
-  justify-content: flex-end;
-  padding: 0 9px 8px;
-  border-top: 0;
-}
-.band-meta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 4px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid color-mix(in srgb, var(--row-line) 60%, transparent);
-  color: var(--band-soft);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-.row-p9 .band-meta {
-  border-bottom-color: var(--accent);
-}
-.band-left {
-  display: flex;
-  min-width: 0;
-  align-items: baseline;
-  gap: 7px;
-  overflow: hidden;
-}
-.band-cond {
-  color: var(--band-ink);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-}
-.band-tag {
-  overflow: hidden;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-}
-/* Every card reserves the same two-line price area and prices end on the
-   same right edge, so a row of prices reads as one line. */
-.band-prices {
-  display: flex;
-  height: 2.2em;
-  flex-direction: column;
-  justify-content: flex-end;
-  font-size: var(--price-size, 27px);
-}
-.bot .name-block {
-  margin: 0 0 3px;
-}
-.bot .price-block {
-  color: var(--band-ink);
-  text-align: left;
-  font-variant-numeric: tabular-nums;
-}
-.bot .price-dual-line,
-.bot .price-line-single {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  font-family: var(--title-font);
-  font-size: var(--price-size, 27px);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-.bot .price-line-single {
-  font-size: calc(var(--price-size, 27px) * 1.18);
-}
-.bot .price-line-single > :last-child {
-  margin-left: auto;
-}
-.bot .price,
-.bot .price-amount {
-  font-family: var(--title-font);
-  font-size: inherit;
-  font-weight: 700;
-  text-shadow: none;
-}
-.bot .price-override-value {
-  font-size: 24px;
-}
-.bot .price-lang {
-  margin: 0;
-  color: color-mix(in srgb, var(--band-ink) 78%, transparent);
-  font-family: var(--kicker-font);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-}
-.bot .price-label-rf,
-.bot .price-label-cf {
-  min-width: 0;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: none;
-  box-shadow: none;
-  color: #d4b8ff;
-}
-.bot .price-label-cf {
-  color: #e6edf3;
-}
-.bot .yen {
-  margin-left: 2px;
-  font-size: 0.55em;
-  font-weight: 600;
-}
-.updated-at-global {
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: none;
-  box-shadow: none;
-  backdrop-filter: none;
-  color: var(--footer-ink);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-}
-`;
-
 const MTG_CARD_BACK_HTML = `<div class="cell cell-mtg-card-back">
     <div class="frame">
       <div class="frame-inner">
@@ -554,7 +310,6 @@ export function renderBuylistHtml(config: SheetConfig): string {
 
   const highEndSheet = isHighEndSheet(config.sheetName, config.cards);
   const theme = resolveTheme(config.theme);
-  const editorial = theme.layout === "editorial";
   const size = resolveOutputSize(config.outputSize);
   const gridCols = size.cols;
   const gridRows = getGridRows(size);
@@ -582,7 +337,6 @@ export function renderBuylistHtml(config: SheetConfig): string {
             showExpansionName,
             showRarityBadge,
             showCondition,
-            editorial,
           })
         );
       } else if (slot.kind === "mtg-card-back") {
@@ -1165,14 +919,16 @@ ${size.width < 1700 ? `.title-line {
   left: 0;
   transform-origin: top left;
 }
-${editorial ? EDITORIAL_CSS : ""}
 </style>
 </head>
 <body>
 ${size.height ? `<div class="page" style="width:${size.width}px;height:${size.height}px">` : ""}
-<div class="panel" data-theme="${theme.id}" data-layout="${theme.layout}">
+<div class="panel" data-theme="${theme.id}">
   <div class="hdr">
-    <div class="hdr-logos">${editorial && !config.logoGg ? "" : logoGgHtml}${editorial && !config.logoMtg ? "" : logoMtgHtml}</div>
+    <div class="hdr-logos">
+      ${logoGgHtml}
+      ${logoMtgHtml}
+    </div>
     <div class="title">
       <div class="title-shell">
         <span class="title-bar"></span>
