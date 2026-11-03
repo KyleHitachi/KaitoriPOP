@@ -36,6 +36,13 @@ interface SheetPreset {
 }
 
 const PRESET_STORAGE_KEY = "kaitori-pop-sheet-presets";
+
+function buildTodayUpdatedAtText(): string {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `更新日 ${today.getFullYear()}.${month}.${day}`;
+}
 const LOGO_MAX_SOURCE_SIZE = 180_000;
 const LOGO_MAX_DIMENSION = 900;
 
@@ -421,13 +428,22 @@ export default function SettingsPanel({ config, onChange }: Props) {
           <label className="mb-1 block text-sm font-medium text-stone-700">
             更新日付
           </label>
-          <input
-            type="text"
-            value={config.updatedAtText}
-            onChange={(event) => onChange({ updatedAtText: event.target.value })}
-            placeholder="例: 更新日 2026.03.24 / 3月24日更新"
-            className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={config.updatedAtText}
+              onChange={(event) => onChange({ updatedAtText: event.target.value })}
+              placeholder="例: 更新日 2026.03.24 / 3月24日更新"
+              className="min-w-0 flex-1 rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            />
+            <button
+              type="button"
+              onClick={() => onChange({ updatedAtText: buildTodayUpdatedAtText() })}
+              className="shrink-0 rounded-xl border border-stone-300 px-3 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-50"
+            >
+              今日の日付
+            </button>
+          </div>
           <p className="mt-1 text-xs text-stone-500">
             画像全体の右下に共通表示されます。自由入力です。
           </p>

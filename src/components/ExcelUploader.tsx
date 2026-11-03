@@ -9,15 +9,15 @@ interface Props {
 }
 
 const COPY = {
-  loadingTitle: "\u0045\u0078\u0063\u0065\u006c\u0020\u002f\u0020\u0043\u0053\u0056\u0020\u3092\u8aad\u307f\u8fbc\u307f\u4e2d\u002e\u002e\u002e",
+  loadingTitle: "Excel / CSV を読み込み中...",
   loadingBody:
-    "\u30c7\u30fc\u30bf\u3092\u89e3\u6790\u3057\u3066\u7de8\u96c6\u7528\u306e\u30b7\u30fc\u30c8\u3092\u4f5c\u6210\u3057\u3066\u3044\u307e\u3059\u3002",
+    "データを解析して編集用のシートを作成しています。",
   title:
     "買取表PNGを作成",
   body:
     "Excel / CSV をドラッグ&ドロップ、またはクリックして選択してください。",
   badge:
-    "\u0060\u002e\u0078\u006c\u0073\u0078\u0060\u0020\u002f\u0020\u0060\u002e\u0063\u0073\u0076\u0060\u0020\u306b\u5bfe\u5fdc",
+    "`.xlsx` / `.csv` に対応",
   sample: "サンプルCSVで試す",
 };
 
