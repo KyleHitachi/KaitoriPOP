@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SheetConfig, Card, GRID_TOTAL } from "@/lib/types";
+import { SheetConfig, Card, GRID_TOTAL, ImageStatus } from "@/lib/types";
 import {
   PREVIEW_CANVAS_HEIGHT,
   PREVIEW_CANVAS_WIDTH,
@@ -103,18 +103,45 @@ const COPY = {
   lightMode: "ライト",
 };
 
-async function ensureSheetImages(config: SheetConfig): Promise<SheetConfig> {
-  if (config.cards.every((card) => card.imageData)) return config;
+// Asks the server to fetch (and cache) card images and records only each
+// card's status; the image bytes never travel to the browser.
+async function ensureSheetImages(
+  config: SheetConfig,
+  retryFailed = false
+): Promise<SheetConfig> {
+  const targets = config.cards
+    .map((card, index) => ({ card, index }))
+    .filter(
+      ({ card }) =>
+        !card.imageData &&
+        (card.imageStatus === undefined || (retryFailed && card.imageStatus === "failed"))
+    );
+  if (targets.length === 0) return config;
 
   const response = await fetch("/api/download-images", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cards: config.cards }),
+    body: JSON.stringify({ urls: targets.map(({ card }) => card.imageUrl) }),
   });
   if (!response.ok) throw new Error(COPY.imageError);
 
-  const data = await response.json();
-  return { ...config, cards: data.cards };
+  const data: { statuses: ImageStatus[] } = await response.json();
+  const cards = [...config.cards];
+  targets.forEach(({ card, index }, targetIndex) => {
+    cards[index] = { ...card, imageStatus: data.statuses[targetIndex] };
+  });
+  return { ...config, cards };
+}
+
+function countImageStatuses(cards: Card[]) {
+  const counts = { ok: 0, failed: 0, none: 0, unchecked: 0 };
+  for (const card of cards) {
+    if (card.imageData || card.imageStatus === "ok") counts.ok++;
+    else if (card.imageStatus === "failed") counts.failed++;
+    else if (card.imageStatus === "none") counts.none++;
+    else counts.unchecked++;
+  }
+  return counts;
 }
 
 async function requestSheetPng(config: SheetConfig): Promise<Blob> {
@@ -363,21 +390,17 @@ export default function Home() {
     });
 
     try {
-      const response = await fetch("/api/download-images", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cards: config.cards }),
-      });
-
-      if (!response.ok) throw new Error(COPY.imageError);
-
-      const data = await response.json();
-      const nextSheets = [...sheets];
-      nextSheets[activeSheet] = { ...config, cards: data.cards };
-      setSheets(nextSheets);
+      const checked = await ensureSheetImages(config, true);
+      setSheets((current) =>
+        current.map((sheet, index) => (index === activeSheet ? checked : sheet))
+      );
+      const counts = countImageStatuses(checked.cards);
       setNotice({
-        tone: "success",
-        message: COPY.imageSuccess,
+        tone: counts.failed > 0 ? "error" : "success",
+        message:
+          counts.failed > 0 || counts.none > 0
+            ? `画像を確認しました（取得 ${counts.ok}枚・失敗 ${counts.failed}枚・URLなし ${counts.none}枚）。失敗とURLなしは仮画像で書き出されます。`
+            : COPY.imageSuccess,
       });
     } catch (error) {
       console.error("Image download error:", error);
@@ -447,7 +470,7 @@ export default function Home() {
 
         const finalConfig = await ensureSheetImages(config);
         if (finalConfig !== config) {
-          // Keep fetched images so the autosave and later exports reuse them.
+          // Keep the checked statuses so later exports skip those cards.
           setSheets((current) =>
             current.map((sheet, sheetIndex) => (sheetIndex === index ? finalConfig : sheet))
           );
@@ -550,14 +573,12 @@ export default function Home() {
     () => sheets.reduce((count, sheet) => count + sheet.cards.length, 0),
     [sheets]
   );
-  const fetchedImageCount = useMemo(
-    () => currentConfig?.cards.filter((card) => Boolean(card.imageData)).length ?? 0,
+  const imageCounts = useMemo(
+    () => countImageStatuses(currentConfig?.cards ?? []),
     [currentConfig]
   );
+  const fetchedImageCount = imageCounts.ok;
   const hasSheets = sheets.length > 0;
-  const missingImageCount = currentConfig
-    ? currentConfig.cards.length - fetchedImageCount
-    : 0;
   const missingPriceCount = useMemo(
     () =>
       currentConfig?.cards.filter(
@@ -579,12 +600,20 @@ export default function Home() {
         value: `${currentConfig.cards.length}/${GRID_TOTAL}`,
       },
       {
-        tone: missingImageCount === 0 ? "success" as NoticeTone : "info" as NoticeTone,
+        tone: (imageCounts.failed > 0
+          ? "error"
+          : imageCounts.unchecked > 0 || imageCounts.none > 0
+            ? "info"
+            : "success") as NoticeTone,
         label: "画像",
         value:
-          missingImageCount === 0
-            ? "取得済み"
-            : `${missingImageCount}枚未取得。PNG出力時に自動取得します。`,
+          imageCounts.failed > 0
+            ? `${imageCounts.failed}枚の取得に失敗。PNGでは仮画像になります。`
+            : imageCounts.unchecked > 0
+              ? `${imageCounts.unchecked}枚未確認。PNG出力時に自動取得します。`
+              : imageCounts.none > 0
+                ? `${imageCounts.none}枚は画像URLがなく仮画像になります。`
+                : "取得済み",
       },
       {
         tone: missingPriceCount === 0 ? "success" as NoticeTone : "error" as NoticeTone,
@@ -623,7 +652,7 @@ export default function Home() {
           ]
         : []),
     ];
-  }, [currentConfig, missingImageCount, missingPriceCount, overflowCount]);
+  }, [currentConfig, imageCounts, missingPriceCount, overflowCount]);
 
   useEffect(() => {
     const viewportNode = previewViewportRef.current;

@@ -1,3 +1,6 @@
+// "none": no image URL, so the renderer uses the placeholder.
+export type ImageStatus = "ok" | "failed" | "none";
+
 export interface Card {
   id: string;
   no: number;
@@ -22,7 +25,9 @@ export interface Card {
   rarityOverride?: string;
   foilOverride?: boolean;
   landOverride?: boolean;
+  // Only present in work files saved before images moved server-side.
   imageData?: string;
+  imageStatus?: ImageStatus;
 }
 
 export interface RowLabel {
