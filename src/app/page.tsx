@@ -11,6 +11,15 @@ import SheetTabs from "@/components/SheetTabs";
 import BuylistPreview from "@/components/BuylistPreview";
 import CardEditor from "@/components/CardEditor";
 import SettingsPanel from "@/components/SettingsPanel";
+import {
+  SavedWork,
+  buildSavedWork,
+  buildWorkFileName,
+  clearCurrentWork,
+  loadCurrentWork,
+  parseWorkFileText,
+  saveCurrentWork,
+} from "@/lib/work-storage";
 
 type NoticeTone = "info" | "success" | "error";
 type PreviewZoom = "fit" | 0.5 | 0.75 | 1;
@@ -91,6 +100,17 @@ const COPY = {
   lightMode: "ライト",
 };
 
+function formatSavedAt(savedAt: string): string {
+  const date = new Date(savedAt);
+  if (Number.isNaN(date.getTime())) return "日時不明";
+  return date.toLocaleString("ja-JP", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function buildNoticeClasses(tone: NoticeTone): string {
   if (tone === "success") {
     return "border-emerald-200 bg-emerald-50 text-emerald-900";
@@ -124,8 +144,10 @@ export default function Home() {
     tone: "info",
     message: COPY.initialNotice,
   });
+  const [workRestored, setWorkRestored] = useState(false);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const previewCanvasRef = useRef<HTMLDivElement | null>(null);
+  const workFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const previewScale = previewZoom === "fit" ? fitPreviewScale : previewZoom;
 
@@ -148,6 +170,82 @@ export default function Home() {
       isDarkMode ? "dark" : "light"
     );
   }, [isDarkMode]);
+
+  const applySavedWork = useCallback((work: SavedWork, message: string) => {
+    setSheets(work.sheets);
+    setActiveSheet(work.activeSheet);
+    setShowSettings(true);
+    setNotice({ tone: "success", message });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadCurrentWork()
+      .then((work) => {
+        if (cancelled || !work) return;
+        applySavedWork(
+          work,
+          `前回の作業（${formatSavedAt(work.savedAt)} 保存）を復元しました。`
+        );
+      })
+      .catch((error) => console.warn("Work restore failed:", error))
+      .finally(() => {
+        if (!cancelled) setWorkRestored(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [applySavedWork]);
+
+  // Autosave every edit so a reload or a closed tab does not lose the board.
+  useEffect(() => {
+    if (!workRestored || sheets.length === 0) return;
+    const timer = window.setTimeout(() => {
+      saveCurrentWork(buildSavedWork(sheets, activeSheet)).catch((error) =>
+        console.warn("Work autosave failed:", error)
+      );
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [activeSheet, sheets, workRestored]);
+
+  const handleSaveWorkFile = useCallback(() => {
+    if (sheets.length === 0) return;
+    const work = buildSavedWork(sheets, activeSheet);
+    const blob = new Blob([JSON.stringify(work)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = buildWorkFileName(work);
+    link.click();
+    URL.revokeObjectURL(url);
+    setNotice({ tone: "success", message: `${link.download} を保存しました。` });
+  }, [activeSheet, sheets]);
+
+  const handleOpenWorkFile = useCallback(
+    async (file: File) => {
+      const work = parseWorkFileText(await file.text());
+      if (!work) {
+        setNotice({
+          tone: "error",
+          message: `${file.name} は KaitoriPOP の作業ファイルとして読み込めませんでした。`,
+        });
+        return;
+      }
+      applySavedWork(work, `${file.name} を開きました。`);
+    },
+    [applySavedWork]
+  );
+
+  const handleStartOver = useCallback(() => {
+    if (!window.confirm("いまの作業を閉じて、最初の読み込み画面に戻りますか？（保存していない変更は消えます）")) {
+      return;
+    }
+    setSheets([]);
+    setActiveSheet(0);
+    setEditingCardIndex(null);
+    setNotice({ tone: "info", message: COPY.initialNotice });
+    clearCurrentWork().catch((error) => console.warn("Work clear failed:", error));
+  }, []);
 
   const handleUpload = useCallback(async (file: File) => {
     setLoading(true);
@@ -476,14 +574,52 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col gap-3 lg:items-end">
-            <button
-              type="button"
-              aria-pressed={isDarkMode}
-              onClick={() => setIsDarkMode((value) => !value)}
-              className="self-start rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50 lg:self-end"
-            >
-              {isDarkMode ? COPY.lightMode : COPY.darkMode}
-            </button>
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              {hasSheets && (
+                <button
+                  type="button"
+                  onClick={handleSaveWorkFile}
+                  className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
+                >
+                  作業を保存
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => workFileInputRef.current?.click()}
+                className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
+              >
+                作業を開く
+              </button>
+              <input
+                ref={workFileInputRef}
+                type="file"
+                accept=".json,application/json"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (file) void handleOpenWorkFile(file);
+                }}
+              />
+              {hasSheets && (
+                <button
+                  type="button"
+                  onClick={handleStartOver}
+                  className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
+                >
+                  最初から
+                </button>
+              )}
+              <button
+                type="button"
+                aria-pressed={isDarkMode}
+                onClick={() => setIsDarkMode((value) => !value)}
+                className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
+              >
+                {isDarkMode ? COPY.lightMode : COPY.darkMode}
+              </button>
+            </div>
 
             {hasSheets && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
