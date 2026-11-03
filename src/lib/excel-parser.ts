@@ -3,8 +3,6 @@ import {
   Card,
   SheetConfig,
   LAND_KEYWORDS,
-  DEFAULT_TITLE,
-  DEFAULT_TITLE_SUBTITLE,
   DEFAULT_CTA_MAIN,
   DEFAULT_CTA_SUB,
   DEFAULT_FOOTER,
@@ -13,6 +11,7 @@ import {
 } from "./types";
 import { resolveSpecialFoilBadge } from "./foil-badge";
 import { sortSheet } from "./sort-engine";
+import { THEMES, detectGame } from "./themes";
 
 export interface ParseWarning {
   sheetName: string;
@@ -513,10 +512,13 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
       });
     }
 
+    const theme = THEMES[detectGame(sheetName, trimmedCards)];
+
     sheets.push(sortSheet({
       sheetName,
-      title: DEFAULT_TITLE,
-      titleSubtitle: DEFAULT_TITLE_SUBTITLE,
+      theme: theme.id,
+      title: theme.defaultTitle,
+      titleSubtitle: theme.defaultSubtitle,
       showTitleSubtitle: true,
       cards: trimmedCards,
       overflowCards,
@@ -524,7 +526,7 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
       rowLabels: [],
       showCardNames: false,
       showExpansionName: true,
-      showRarityBadge: false,
+      showRarityBadge: theme.game === "lorcana",
       showCondition: true,
       logoGgHeight: 96,
       logoMtgHeight: 64,
