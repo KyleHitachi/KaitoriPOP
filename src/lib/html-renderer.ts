@@ -236,10 +236,10 @@ function buildCardHtml(
       : "";
 
   return `
-    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}">
+    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}" data-card-id="${escapeHtml(card.id)}">
       <div class="${frameClasses}">
         <div class="frame-inner">
-          <img src="${escapeHtml(imgSrc)}" alt="${imageAlt}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(fallbackSrc)}';" />
+          <img src="${escapeHtml(imgSrc)}" alt="${imageAlt}" onerror="this.onerror=null;this.setAttribute('data-fallback',this.getAttribute('src'));this.src='${escapeHtml(fallbackSrc)}';" />
           <div class="frame-top-glow"></div>
           ${options.showCondition ? `<div class="condition-chip">${escapeHtml(card.condition)}</div>` : ""}
           ${
