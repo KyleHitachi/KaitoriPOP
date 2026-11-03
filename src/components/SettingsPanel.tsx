@@ -175,22 +175,20 @@ function Section({
 
   return (
     <details
-      className="border-t border-stone-200 py-4 first:border-t-0 first:pt-0"
+      className="group/section border-t border-line py-6"
       open={isOpen}
       onToggle={(event) => setIsOpen(event.currentTarget.open)}
     >
-      <summary className="cursor-pointer list-none">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-sm font-black text-stone-900">{title}</div>
-            <p className="mt-1 text-xs leading-relaxed text-stone-500">{summary}</p>
-          </div>
-          <span className="rounded-full border border-stone-200 px-2 py-1 text-[10px] font-bold text-stone-500">
-            開閉
-          </span>
-        </div>
+      <summary className="flex cursor-pointer list-none items-baseline justify-between gap-3 [&::-webkit-details-marker]:hidden">
+        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-[15px]">{title}</span>
+          <span className="text-xs text-ink-3">{summary}</span>
+        </span>
+        <span aria-hidden="true" className="text-lg font-light leading-none text-ink-2">
+          {isOpen ? "−" : "+"}
+        </span>
       </summary>
-      <div className="mt-4 space-y-4">{children}</div>
+      <div className="mt-6 space-y-6">{children}</div>
     </details>
   );
 }
@@ -295,23 +293,19 @@ export default function SettingsPanel({ config, onChange, onApplyToAll }: Props)
   };
 
   return (
-    <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-[0_24px_80px_rgba(66,39,9,0.08)]">
-      <div className="mb-5">
-        <div className="text-[11px] font-semibold tracking-[0.22em] text-amber-700">
-          表示設定
-        </div>
-        <h3 className="mt-2 text-xl font-black text-stone-900">シート設定</h3>
-        <p className="mt-1 text-sm text-stone-500">
-          現在のシートの見た目をカテゴリごとに調整できます。
+    <div className="border-t border-ink xl:border-t-0 xl:border-l xl:border-line xl:pl-8">
+      <div className="pb-8 pt-6 xl:pt-1">
+        <div className="ui-eyebrow">Settings</div>
+        <h3 className="mt-3 text-2xl font-light tracking-[-0.01em]">シート設定</h3>
+        <p className="mt-2 text-xs leading-relaxed text-ink-2">
+          現在のシートの見た目を調整します。
         </p>
       </div>
 
-      <Section title="基本情報" summary="タイトル、CTA、更新日の表示を調整します。">
+      <Section title="基本情報" summary="タイトル、CTA、更新日の表示">
         <div>
-          <label className="mb-1 block text-sm font-medium text-stone-700">
-            TCG・デザイン
-          </label>
-          <div className="grid grid-cols-2 gap-2">
+          <span className="ui-label">TCG・デザイン</span>
+          <div className="mt-3 flex flex-wrap gap-2">
             {THEME_ORDER.map((themeId) => {
               const theme = THEMES[themeId];
               const isActive = resolveTheme(config.theme).id === themeId;
@@ -321,17 +315,14 @@ export default function SettingsPanel({ config, onChange, onApplyToAll }: Props)
                   type="button"
                   aria-pressed={isActive}
                   onClick={() => onChange(buildThemeChange(config, themeId))}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${
-                    isActive
-                      ? "border-stone-900 bg-stone-900 text-white"
-                      : "border-stone-300 text-stone-700 hover:bg-stone-50"
-                  }`}
+                  className={`ui-btn ui-btn-sm ${isActive ? "ui-btn-primary" : ""}`}
                 >
                   <span
                     aria-hidden="true"
-                    className="h-4 w-4 shrink-0 rounded-full border border-white/40"
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{
                       background: `linear-gradient(135deg, ${theme.vars["--panel-bg"] ?? "#f1eadc"} 50%, ${theme.vars["--accent"] ?? "#b82020"} 50%)`,
+                      boxShadow: "0 0 0 1px rgba(128, 128, 128, 0.35)",
                     }}
                   />
                   {theme.label}
@@ -339,29 +330,25 @@ export default function SettingsPanel({ config, onChange, onApplyToAll }: Props)
               );
             })}
           </div>
-          <p className="mt-1 text-xs text-stone-500">
+          <p className="mt-3 text-xs leading-relaxed text-ink-2">
             各ゲームの公式サイトの配色・書体に合わせます。タイトルとサブタイトルは、初期値のままなら一緒に切り替わります。
           </p>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-stone-700">
-            タイトル
-          </label>
+        <label className="block">
+          <span className="ui-label">タイトル</span>
           <input
             type="text"
             value={config.title}
             onChange={(event) => onChange({ title: event.target.value })}
-            className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            className="ui-input"
           />
-        </div>
+        </label>
 
         <div>
-          <div className="mb-1 flex items-center justify-between gap-3">
-            <label className="block text-sm font-medium text-stone-700">
-              サブタイトル
-            </label>
-            <label className="inline-flex items-center gap-2 text-xs font-bold text-stone-600">
+          <div className="flex items-center justify-between gap-3">
+            <span className="ui-label">サブタイトル</span>
+            <label className="inline-flex items-center gap-2 text-xs text-ink-2">
               <input
                 type="checkbox"
                 checked={config.showTitleSubtitle ?? true}
@@ -374,260 +361,188 @@ export default function SettingsPanel({ config, onChange, onApplyToAll }: Props)
           </div>
           <input
             type="text"
+            aria-label="サブタイトル"
             value={config.titleSubtitle ?? ""}
             onChange={(event) => onChange({ titleSubtitle: event.target.value })}
             placeholder="例: モダン・レガシー"
             disabled={!(config.showTitleSubtitle ?? true)}
-            className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            className="ui-input"
           />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-stone-700">
-            CTA メイン
-          </label>
+        <label className="block">
+          <span className="ui-label">CTA メイン</span>
           <input
             type="text"
             value={config.ctaMain}
             onChange={(event) => onChange({ ctaMain: event.target.value })}
-            className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            className="ui-input"
           />
-        </div>
+        </label>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-stone-700">
-            CTA サブ
-          </label>
+        <label className="block">
+          <span className="ui-label">CTA サブ</span>
           <input
             type="text"
             value={config.ctaSub}
             onChange={(event) => onChange({ ctaSub: event.target.value })}
-            className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            className="ui-input"
           />
-        </div>
+        </label>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-stone-700">
-            更新日付
-          </label>
-          <div className="flex gap-2">
+          <span className="ui-label">更新日付</span>
+          <div className="flex items-end gap-3">
             <input
               type="text"
+              aria-label="更新日付"
               value={config.updatedAtText}
               onChange={(event) => onChange({ updatedAtText: event.target.value })}
-              placeholder="例: 更新日 2026.03.24 / 3月24日更新"
-              className="min-w-0 flex-1 rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              placeholder="例: 更新日 2026.03.24"
+              className="ui-input flex-1"
             />
             <button
               type="button"
               onClick={() => onChange({ updatedAtText: buildTodayUpdatedAtText() })}
-              className="shrink-0 rounded-xl border border-stone-300 px-3 py-2 text-xs font-bold text-stone-700 transition hover:bg-stone-50"
+              className="ui-btn ui-btn-sm mb-1"
             >
               今日の日付
             </button>
           </div>
-          <p className="mt-1 text-xs text-stone-500">
-            画像全体の右下に共通表示されます。自由入力です。
-          </p>
+          <p className="mt-2 text-xs text-ink-2">画像全体の右下に共通表示されます。自由入力です。</p>
         </div>
       </Section>
 
-      <Section title="カード表示" summary="カード名や補足テキストの見え方を調整します。">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-stone-700">
-            フッターテキスト
-          </label>
+      <Section title="カード表示" summary="カード名や補足テキストの見え方">
+        <label className="block">
+          <span className="ui-label">フッターテキスト</span>
           <textarea
             value={config.footerText}
             onChange={(event) => onChange({ footerText: event.target.value })}
             rows={3}
-            className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+            className="ui-input"
           />
-        </div>
+        </label>
 
-        <label className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-          <input
-            type="checkbox"
-            checked={config.showCardNames}
-            onChange={(event) =>
-              onChange({ showCardNames: event.target.checked })
-            }
-            className="mt-1"
-          />
-          <span>
-            <span className="block text-sm font-medium text-stone-700">
-              カード名を表示する
-            </span>
-            <span className="mt-1 block text-xs text-stone-500">
-              必要なときだけカード下部に英名と日本語名を表示します。
-            </span>
-          </span>
-        </label>
-        <label className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-          <input
-            type="checkbox"
-            checked={config.showExpansionName}
-            onChange={(event) =>
-              onChange({ showExpansionName: event.target.checked })
-            }
-            className="mt-1"
-          />
-          <span>
-            <span className="block text-sm font-medium text-stone-700">
-              エキスパンション名を表示
-            </span>
-            <span className="mt-1 block text-xs text-stone-500">
-              カード左下のセット/エキスパンション表示を切り替えます。
-            </span>
-          </span>
-        </label>
-        <label className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-          <input
-            type="checkbox"
-            checked={config.showRarityBadge}
-            onChange={(event) =>
-              onChange({ showRarityBadge: event.target.checked })
-            }
-            className="mt-1"
-          />
-          <span>
-            <span className="block text-sm font-medium text-stone-700">
-              レアリティバッジを表示
-            </span>
-            <span className="mt-1 block text-xs text-stone-500">
-              ロルカナ用のレアリティ列をFoil風バッジで表示します。MTGではオフにできます。
-            </span>
-          </span>
-        </label>
-        <label className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-          <input
-            type="checkbox"
-            checked={config.showCondition}
-            onChange={(event) =>
-              onChange({ showCondition: event.target.checked })
-            }
-            className="mt-1"
-          />
-          <span>
-            <span className="block text-sm font-medium text-stone-700">
-              状態表記を表示
-            </span>
-            <span className="mt-1 block text-xs text-stone-500">
-              カード左上のNM/SPなどの状態チップを切り替えます。
-            </span>
-          </span>
-        </label>
-      </Section>
-
-      <Section title="ロゴ" summary="左上に表示するロゴと、ゲームのロゴ（公式ロゴの画像など）を差し替えます。" defaultOpen={false}>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block text-xs font-medium text-stone-600">
-            ロゴ
-            <input
-              type="file"
-              accept="image/*"
-              onChange={async (event) => {
-                const file = event.target.files?.[0];
-                if (!file) return;
-                const logoGg = await readLogoFile(file);
-                onChange({ logoGg });
-              }}
-              className="mt-2 block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-2 file:font-medium file:text-stone-700"
-            />
-            <div className="mt-3">
-              <div className="mb-1 flex items-center justify-between text-[11px] text-stone-500">
-                <span>表示高さ</span>
-                <span>{logoGgHeight}px</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={48}
-                  max={140}
-                  step={2}
-                  value={logoGgHeight}
-                  onChange={(event) =>
-                    updateLogoGgHeight(event.target.value)
-                  }
-                  onInput={(event) =>
-                    updateLogoGgHeight(event.currentTarget.value)
-                  }
-                  className="min-w-0 flex-1 accent-amber-600"
-                />
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={logoGgHeight}
-                  onChange={(event) =>
-                    updateLogoGgHeight(event.target.value)
-                  }
-                  className="w-16 rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-800 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-                />
-              </div>
-            </div>
-          </label>
-          <label className="block text-xs font-medium text-stone-600">
-            ゲームロゴ
-            <input
-              type="file"
-              accept="image/*"
-              onChange={async (event) => {
-                const file = event.target.files?.[0];
-                if (!file) return;
-                const logoMtg = await readLogoFile(file);
-                onChange({ logoMtg });
-              }}
-              className="mt-2 block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-2 file:font-medium file:text-stone-700"
-            />
-            <div className="mt-3">
-              <div className="mb-1 flex items-center justify-between text-[11px] text-stone-500">
-                <span>表示高さ</span>
-                <span>{logoMtgHeight}px</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={36}
-                  max={120}
-                  step={2}
-                  value={logoMtgHeight}
-                  onChange={(event) =>
-                    updateLogoMtgHeight(event.target.value)
-                  }
-                  onInput={(event) =>
-                    updateLogoMtgHeight(event.currentTarget.value)
-                  }
-                  className="min-w-0 flex-1 accent-amber-600"
-                />
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={logoMtgHeight}
-                  onChange={(event) =>
-                    updateLogoMtgHeight(event.target.value)
-                  }
-                  className="w-16 rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-800 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-                />
-              </div>
-            </div>
-          </label>
+        <div className="border-t border-line">
+          {[
+            {
+              key: "showCardNames" as const,
+              label: "カード名を表示",
+              note: "必要なときだけカード下部に英名と日本語名を表示します。",
+            },
+            {
+              key: "showExpansionName" as const,
+              label: "エキスパンション名を表示",
+              note: "カード左下のセット/エキスパンション表示を切り替えます。",
+            },
+            {
+              key: "showRarityBadge" as const,
+              label: "レアリティバッジを表示",
+              note: "ロルカナ用のレアリティ列をFoil風バッジで表示します。",
+            },
+            {
+              key: "showCondition" as const,
+              label: "状態表記を表示",
+              note: "カード左上のNM/SPなどの状態チップを切り替えます。",
+            },
+          ].map((option) => (
+            <label
+              key={option.key}
+              className="flex cursor-pointer items-start gap-3 border-b border-line py-3.5"
+            >
+              <input
+                type="checkbox"
+                checked={config[option.key]}
+                onChange={(event) =>
+                  onChange({ [option.key]: event.target.checked } as Partial<SheetConfig>)
+                }
+                className="mt-1"
+              />
+              <span>
+                <span className="block text-[13px]">{option.label}</span>
+                <span className="mt-1 block text-xs leading-relaxed text-ink-2">
+                  {option.note}
+                </span>
+              </span>
+            </label>
+          ))}
         </div>
       </Section>
 
-      <Section title="行ラベル" summary="カテゴリ見出しを行ごとに追加できます。" defaultOpen={false}>
-        <div className="space-y-2">
+      <Section title="ロゴ" summary="左上のロゴとゲームのロゴを差し替え" defaultOpen={false}>
+        {[
+          {
+            label: "ロゴ",
+            height: logoGgHeight,
+            min: 48,
+            max: 140,
+            update: updateLogoGgHeight,
+            onFile: (logoGg: string) => onChange({ logoGg }),
+          },
+          {
+            label: "ゲームロゴ",
+            height: logoMtgHeight,
+            min: 36,
+            max: 120,
+            update: updateLogoMtgHeight,
+            onFile: (logoMtg: string) => onChange({ logoMtg }),
+          },
+        ].map((logo) => (
+          <div key={logo.label}>
+            <span className="ui-label">{logo.label}</span>
+            <input
+              type="file"
+              accept="image/*"
+              aria-label={`${logo.label}の画像`}
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                logo.onFile(await readLogoFile(file));
+              }}
+              className="mt-2 block w-full text-xs text-ink-2"
+            />
+            <div className="mt-3 flex items-center gap-3">
+              <span className="w-14 shrink-0 text-xs text-ink-2">表示高さ</span>
+              <input
+                type="range"
+                min={logo.min}
+                max={logo.max}
+                step={2}
+                value={logo.height}
+                aria-label={`${logo.label}の表示高さ`}
+                onChange={(event) => logo.update(event.target.value)}
+                onInput={(event) => logo.update(event.currentTarget.value)}
+                className="min-w-0 flex-1"
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={logo.height}
+                aria-label={`${logo.label}の表示高さ（px）`}
+                onChange={(event) => logo.update(event.target.value)}
+                className="ui-input w-12 py-1 text-right text-xs tabular-nums"
+              />
+              <span className="text-xs text-ink-3">px</span>
+            </div>
+          </div>
+        ))}
+      </Section>
+
+      <Section title="行ラベル" summary="行ごとのカテゴリ見出し" defaultOpen={false}>
+        <div className="space-y-1">
           {[0, 1, 2, 3].map((row) => {
             const label = rowLabelsByRow.get(row);
 
             return (
-              <div key={row} className="flex items-center gap-2">
-                <span className="w-12 text-xs font-medium text-stone-500">
-                  {row + 1}行目
+              <div key={row} className="flex items-center gap-3">
+                <span className="w-10 shrink-0 text-xs tabular-nums text-ink-3">
+                  {String(row + 1).padStart(2, "0")}
                 </span>
                 <input
                   type="text"
+                  aria-label={`${row + 1}行目のラベル`}
                   value={label?.text || ""}
                   onChange={(event) => {
                     const nextText = event.target.value;
@@ -646,9 +561,9 @@ export default function SettingsPanel({ config, onChange, onApplyToAll }: Props)
                     });
                   }}
                   placeholder="ラベルを入力"
-                  className="min-w-0 flex-1 rounded-lg border border-stone-300 px-2 py-2 text-sm text-stone-800 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  className="ui-input flex-1"
                 />
-                <label className="flex items-center gap-1 text-xs text-stone-500">
+                <label className="flex items-center gap-1.5 text-xs text-ink-2">
                   <input
                     type="checkbox"
                     checked={label?.visible ?? false}
@@ -674,81 +589,78 @@ export default function SettingsPanel({ config, onChange, onApplyToAll }: Props)
 
       <Section
         title="プリセット"
-        summary="タイトル、文言、ロゴ、表示設定を保存して別シートへ呼び出せます。"
+        summary="見た目の設定を保存して別シートへ"
         defaultOpen={false}
       >
-        <div className="settings-preset-card rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
-          <label className="settings-preset-label mb-1 block text-sm font-bold text-stone-800">
-            保存名
-          </label>
-          <div className="flex gap-2">
+        <div>
+          <span className="ui-label">保存名</span>
+          <div className="flex items-end gap-3">
             <input
               type="text"
+              aria-label="プリセットの保存名"
               value={presetName}
               onChange={(event) => setPresetName(event.target.value)}
               placeholder="例: ロルカナ標準"
-              className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              className="ui-input flex-1"
             />
-            <button
-              type="button"
-              onClick={savePreset}
-              className="shrink-0 rounded-xl bg-stone-900 px-4 py-2 text-sm font-black text-white transition hover:bg-stone-800"
-            >
+            <button type="button" onClick={savePreset} className="ui-btn ui-btn-sm ui-btn-primary mb-1">
               保存
             </button>
           </div>
+        </div>
 
-          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-            <select
-              value={selectedPresetId}
-              onChange={(event) => setSelectedPresetId(event.target.value)}
-              className="min-w-0 rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-            >
-              <option value="">プリセットを選択</option>
-              {presets.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.name}
-                </option>
-              ))}
-            </select>
+        <div>
+          <span className="ui-label">保存済み</span>
+          <select
+            aria-label="プリセットを選択"
+            value={selectedPresetId}
+            onChange={(event) => setSelectedPresetId(event.target.value)}
+            className="ui-select mt-2 w-full"
+          >
+            <option value="">プリセットを選択</option>
+            {presets.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.name}
+              </option>
+            ))}
+          </select>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={applyPreset}
-              className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 transition hover:bg-stone-50"
+              disabled={!selectedPresetId}
+              className="ui-btn ui-btn-sm"
             >
-              呼び出し
+              このシートに反映
             </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={applyPresetToAll}
-            disabled={!selectedPresetId}
-            className="mt-2 w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-950 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            全シートへ反映
-          </button>
-
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <p className="settings-preset-help text-xs leading-relaxed text-stone-700">
-              カード、価格、並び順は保存せず、買取表の見た目だけをコピーします。
-            </p>
+            <button
+              type="button"
+              onClick={applyPresetToAll}
+              disabled={!selectedPresetId}
+              className="ui-btn ui-btn-sm"
+            >
+              全シートへ反映
+            </button>
             <button
               type="button"
               onClick={deletePreset}
               disabled={!selectedPresetId}
-              className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="ui-link ml-auto text-xs text-danger"
             >
               削除
             </button>
           </div>
-
-          {presetMessage && (
-            <div className="settings-preset-message mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900">
-              {presetMessage}
-            </div>
-          )}
+          <p className="mt-3 text-xs leading-relaxed text-ink-2">
+            カード、価格、並び順は保存せず、買取表の見た目だけをコピーします。
+          </p>
         </div>
+
+        {presetMessage && (
+          <p role="status" className="flex items-center gap-2 text-xs">
+            <span className="ui-dot text-ok" />
+            {presetMessage}
+          </p>
+        )}
       </Section>
     </div>
   );

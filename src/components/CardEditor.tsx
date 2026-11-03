@@ -76,69 +76,58 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-[28px] border border-stone-200 bg-white shadow-[0_30px_100px_rgba(0,0,0,0.28)]"
+        className="max-h-[90vh] w-full max-w-3xl overflow-auto bg-paper text-ink shadow-[0_30px_80px_rgba(0,0,0,0.18)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="grid gap-0 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <div className="border-b border-stone-200 bg-[linear-gradient(180deg,_#191611,_#2c2216)] p-6 text-white lg:border-b-0 lg:border-r">
-            <div className="mb-4 inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[11px] font-semibold tracking-[0.22em] text-amber-200">
-              カード編集
-            </div>
+          <div className="border-b border-line bg-surface p-8 lg:border-b-0 lg:border-r">
+            <div className="ui-eyebrow">Card</div>
 
-            <h3 className="text-2xl font-black leading-tight">{card.nameJp}</h3>
-            <p className="mt-2 text-sm text-stone-300">
+            <h3 className="mt-4 text-2xl font-light leading-snug">{card.nameJp}</h3>
+            <p className="mt-2 text-[13px] text-ink-2">
               {card.nameEn || "英語名なし"}
             </p>
 
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs font-semibold tracking-[0.2em] text-stone-400">
+            <div className="mt-8 border-t border-line pt-4">
+              <div className="ui-eyebrow">
                 現在の適用内容
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+                <span className="rounded-full border border-line px-3 py-1 text-xs text-ink-2">
                   価格: {priceOverride ? "上書きあり" : "元データ"}
                 </span>
-                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+                <span className="rounded-full border border-line px-3 py-1 text-xs text-ink-2">
                   セット表記: {setLabelOverride ? "上書きあり" : "自動"}
                 </span>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
+            <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-4 text-[13px]">
               {metaItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-3"
-                >
-                  <div className="text-[10px] font-semibold tracking-[0.18em] text-stone-400">
-                    {item.label}
-                  </div>
-                  <div className="mt-1 font-semibold text-stone-100">{item.value}</div>
+                <div key={item.label} className="border-t border-line pt-3">
+                  <div className="text-[11px] text-ink-2">{item.label}</div>
+                  <div className="mt-1 tabular-nums">{item.value}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-8">
             <div className="mb-5">
-              <div className="text-[11px] font-semibold tracking-[0.2em] text-amber-700">
-                上書き設定
-              </div>
-              <h4 className="mt-2 text-xl font-black text-stone-900">
-                このカードを微調整
-              </h4>
-              <p className="mt-1 text-sm text-stone-500">
+              <div className="ui-eyebrow">Override</div>
+              <h4 className="mt-3 text-xl font-light">このカードを微調整</h4>
+              <p className="mt-2 text-xs leading-relaxed text-ink-2">
                 空欄なら元データのまま使います。Foil と Land の判定も必要ならここで上書きできます。
               </p>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
-                <label className="mb-1 block text-sm font-medium text-stone-700">
+                <label className="ui-label">
                   価格の上書き
                 </label>
                 <input
@@ -146,15 +135,15 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
                   value={priceOverride}
                   onChange={(event) => setPriceOverride(event.target.value)}
                   placeholder="例: 18,000円"
-                  className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  className="ui-input"
                 />
-                <p className="mt-1 text-xs text-stone-500">
+                <p className="mt-2 text-xs text-ink-2">
                   元価格: JP {formatPrice(card.priceJp)} / EN {formatPrice(card.priceEn)}
                 </p>
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-stone-700">
+                <label className="ui-label">
                   セット表記の上書き
                 </label>
                 <input
@@ -162,12 +151,12 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
                   value={setLabelOverride}
                   onChange={(event) => setSetLabelOverride(event.target.value)}
                   placeholder="例: IT / LEG"
-                  className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  className="ui-input"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-stone-700">
+                <label className="ui-label">
                   レアリティ表示の上書き
                 </label>
                 <input
@@ -175,16 +164,16 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
                   value={rarityOverride}
                   onChange={(event) => setRarityOverride(event.target.value)}
                   placeholder="例: エンチャンテッド / Legendary"
-                  className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  className="ui-input"
                 />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                  <div className="mb-2 text-sm font-semibold text-stone-800">
+                <div className="border-t border-line pt-4">
+                  <div className="mb-2 text-[13px]">
                     Foil 判定
                   </div>
-                  <div className="text-xs text-stone-500">
+                  <div className="text-xs text-ink-2">
                     元データ: {card.foil ? "オン" : "オフ"} / 現在:{" "}
                     {buildOverrideState(foilOverride)}
                   </div>
@@ -196,7 +185,8 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
                       }
                       setFoilOverride(foilOverride ? false : undefined);
                     }}
-                    className="mt-3 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100"
+                    type="button"
+                    className="ui-btn ui-btn-sm mt-4 w-full"
                   >
                     {foilOverride === undefined
                       ? "元データを使用中"
@@ -206,11 +196,11 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
                   </button>
                 </div>
 
-                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                  <div className="mb-2 text-sm font-semibold text-stone-800">
+                <div className="border-t border-line pt-4">
+                  <div className="mb-2 text-[13px]">
                     Land 判定
                   </div>
-                  <div className="text-xs text-stone-500">
+                  <div className="text-xs text-ink-2">
                     元データ: {card.isLand ? "オン" : "オフ"} / 現在:{" "}
                     {buildOverrideState(landOverride)}
                   </div>
@@ -222,7 +212,8 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
                       }
                       setLandOverride(landOverride ? false : undefined);
                     }}
-                    className="mt-3 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100"
+                    type="button"
+                    className="ui-btn ui-btn-sm mt-4 w-full"
                   >
                     {landOverride === undefined
                       ? "元データを使用中"
@@ -234,16 +225,18 @@ export default function CardEditor({ card, onSave, onClose }: Props) {
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col-reverse gap-3 border-t border-stone-200 pt-5 sm:flex-row sm:justify-end">
+            <div className="mt-10 flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:justify-end">
               <button
+                type="button"
                 onClick={onClose}
-                className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+                className="ui-btn"
               >
                 キャンセル
               </button>
               <button
+                type="button"
                 onClick={handleSave}
-                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+                className="ui-btn ui-btn-primary"
               >
                 保存する
               </button>

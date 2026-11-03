@@ -153,8 +153,8 @@ function CellTarget({
   const name = card.nameJp || card.nameEn;
   const badgeStyle = {
     fontSize: ui(11),
-    padding: `${ui(3)}px ${ui(7)}px`,
-    borderRadius: ui(6),
+    padding: `${ui(3)}px ${ui(9)}px`,
+    borderRadius: 999,
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -201,13 +201,13 @@ function CellTarget({
         style={{ right: ui(6), top: ui(6), gap: ui(4) }}
       >
         <div
-          className="border border-white/70 bg-stone-950/75 font-black tracking-[0.06em] text-white shadow-sm"
+          className="whitespace-nowrap rounded-full bg-[#121212]/85 font-medium tracking-[0.04em] text-white"
           style={badgeStyle}
         >
           ドラッグで移動
         </div>
         <div
-          className="border border-white/60 bg-white/90 font-bold text-stone-700 shadow-sm"
+          className="whitespace-nowrap rounded-full bg-white/92 font-medium text-[#121212]"
           style={badgeStyle}
         >
           {describeImageStatus(card)}
@@ -215,7 +215,7 @@ function CellTarget({
       </div>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute border border-white/60 bg-white/90 font-bold text-stone-700 opacity-0 shadow-sm transition group-hover/card:opacity-100 group-focus-visible/card:opacity-100"
+        className="pointer-events-none absolute whitespace-nowrap rounded-full bg-white/92 font-medium text-[#121212] opacity-0 transition group-hover/card:opacity-100 group-focus-visible/card:opacity-100"
         style={{ ...badgeStyle, left: ui(6), bottom: ui(6) }}
       >
         クリックで編集
@@ -223,7 +223,7 @@ function CellTarget({
       {overrides.length > 0 && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute border border-amber-200 bg-amber-400 font-black text-stone-950 shadow-sm"
+          className="pointer-events-none absolute flex items-center whitespace-nowrap rounded-full bg-white font-medium text-[#121212]"
           style={{ ...badgeStyle, right: ui(6), bottom: ui(6) }}
         >
           修正済み

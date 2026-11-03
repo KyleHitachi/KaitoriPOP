@@ -60,8 +60,6 @@ const SORT_MODE_NOTICES: Record<Exclude<SortMode, "custom">, string> = {
 };
 
 const COPY = {
-  initialNotice:
-    "Excel / CSV をアップロードすると買取表の作成を始められます。",
   parseProgress:
     "を読み込んでシートを準備しています...",
   parseSuccess:
@@ -88,18 +86,17 @@ const COPY = {
   appTitle: "TCG 買取表ジェネレーター",
   appSubtitle:
     "Excel / CSV を読み込んで、レイアウトを調整し、そのまま PNG に書き出せます。",
-  guide: "使い方",
-  guideTitle: "3ステップで作成",
-  guideStep1: "1. Excel / CSV をアップロード",
+  heroTitle: "Excel から、買取表を一枚に。",
+  guide: "How it works",
+  guideStep1: "Excel / CSV を読み込む",
   guideStep1Body:
     "シートごとに内容を読み取り、買取表タブを自動で作成します。",
-  guideStep2: "2. プレビューを調整",
+  guideStep2: "プレビューで整える",
   guideStep2Body:
     "ドラッグで並び替え、必要なカードだけ価格やセット表記を上書きできます。",
-  guideStep3: "3. PNG を書き出し",
+  guideStep3: "PNG で書き出す",
   guideStep3Body:
     "カード画像は書き出し時に自動で取得され、そのまま完成版の PNG になります。",
-  tipsLabel: "おすすめ:",
   tipsBody:
     "シート名は短め、1シート最大36枚、価格確認後に書き出すと安定します。",
   sampleCsv: "サンプルCSVをダウンロード",
@@ -196,20 +193,12 @@ function formatSavedAt(savedAt: string): string {
   });
 }
 
-function buildNoticeClasses(tone: NoticeTone): string {
-  if (tone === "success") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-900";
-  }
-  if (tone === "error") {
-    return "border-red-200 bg-red-50 text-red-900";
-  }
-  return "border-amber-200 bg-amber-50 text-amber-900";
-}
-
-function buildCheckToneClasses(tone: NoticeTone): string {
-  if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-900";
-  if (tone === "error") return "border-red-200 bg-red-50 text-red-900";
-  return "border-amber-200 bg-amber-50 text-amber-900";
+// Colour of the status dot; the message itself stays in ink. For notices
+// "info" is neutral, for checks it is a warning.
+function buildToneDotClass(tone: NoticeTone, infoClass = "text-ink-3"): string {
+  if (tone === "success") return "text-ok";
+  if (tone === "error") return "text-danger";
+  return infoClass;
 }
 
 export default function Home() {
@@ -225,10 +214,7 @@ export default function Home() {
   const [previewCanvasHeight, setPreviewCanvasHeight] = useState(
     PREVIEW_CANVAS_HEIGHT
   );
-  const [notice, setNotice] = useState<Notice | null>({
-    tone: "info",
-    message: COPY.initialNotice,
-  });
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [workRestored, setWorkRestored] = useState(false);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const previewCanvasRef = useRef<HTMLDivElement | null>(null);
@@ -395,7 +381,7 @@ export default function Home() {
     setSheets([]);
     setActiveSheet(0);
     setEditingCardIndex(null);
-    setNotice({ tone: "info", message: COPY.initialNotice });
+    setNotice(null);
     clearCurrentWork().catch((error) => console.warn("Work clear failed:", error));
   }, []);
 
@@ -796,91 +782,67 @@ export default function Home() {
   }, [canvasWidth, hasSheets, showSettings, currentConfig]);
 
   return (
-    <div
-      className={`min-h-screen bg-[radial-gradient(circle_at_top,_#fff8ec,_#f3efe7_45%,_#ebe5d8_100%)] ${
-        isDarkMode ? "app-dark" : ""
-      }`}
-    >
-      <header className="app-header border-b border-stone-200/80 bg-white/85 px-6 py-5 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-800">
-              Buylist Studio
-            </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-stone-900">
-                {COPY.appTitle}
-              </h1>
-              <p className="text-sm text-stone-600">{COPY.appSubtitle}</p>
-            </div>
+    <div className={`min-h-screen bg-paper text-ink ${isDarkMode ? "app-dark" : ""}`}>
+      <header className="sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-10 gap-y-3 px-6 py-5 lg:px-10">
+          <div className="flex items-baseline gap-4">
+            <span className="text-[22px] font-light tracking-[-0.01em]">KaitoriPOP</span>
+            <span className="hidden text-xs text-ink-2 sm:inline">{COPY.appTitle}</span>
           </div>
 
-          <div className="flex flex-col gap-3 lg:items-end">
-            <div className="flex flex-wrap gap-2 lg:justify-end">
-              {hasSheets && (
-                <button
-                  type="button"
-                  onClick={handleSaveWorkFile}
-                  className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
-                >
-                  作業を保存
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => workFileInputRef.current?.click()}
-                className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
-              >
-                作業を開く
+          <nav aria-label="作業" className="flex flex-wrap items-center gap-x-7 gap-y-2">
+            {hasSheets && (
+              <button type="button" onClick={handleSaveWorkFile} className="ui-link">
+                作業を保存
               </button>
-              <input
-                ref={workFileInputRef}
-                type="file"
-                accept=".json,application/json"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  event.target.value = "";
-                  if (file) void handleOpenWorkFile(file);
-                }}
-              />
-              {hasSheets && (
-                <button
-                  type="button"
-                  onClick={handleStartOver}
-                  className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
-                >
-                  最初から
-                </button>
-              )}
-              <button
-                type="button"
-                aria-pressed={isDarkMode}
-                onClick={() => setIsDarkMode((value) => !value)}
-                className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-stone-50"
-              >
-                {isDarkMode ? COPY.lightMode : COPY.darkMode}
+            )}
+            <button
+              type="button"
+              onClick={() => workFileInputRef.current?.click()}
+              className="ui-link"
+            >
+              作業を開く
+            </button>
+            <input
+              ref={workFileInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void handleOpenWorkFile(file);
+              }}
+            />
+            {hasSheets && (
+              <button type="button" onClick={handleStartOver} className="ui-link">
+                最初から
               </button>
-            </div>
-
-          </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsDarkMode((value) => !value)}
+              className="ui-link text-ink-2"
+            >
+              {isDarkMode ? COPY.lightMode : COPY.darkMode}
+            </button>
+          </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-6 py-6">
+      <main className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
         {notice && (
           <div
             role={notice.tone === "error" ? "alert" : "status"}
-            className={`mb-5 flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm ${buildNoticeClasses(
-              notice.tone
-            )}`}
+            className="flex items-center gap-3 border-b border-line py-3 text-[13px]"
           >
+            <span className={`ui-dot ${buildToneDotClass(notice.tone)}`} />
             <div className="min-w-0 flex-1">{notice.message}</div>
             <button
               type="button"
               aria-label="お知らせを閉じる"
               onClick={() => setNotice(null)}
-              className="-my-1 shrink-0 rounded-lg px-2 py-1 text-base leading-none opacity-60 transition hover:opacity-100"
+              className="shrink-0 px-1 text-lg leading-none text-ink-3 transition hover:text-ink"
             >
               ×
             </button>
@@ -888,8 +850,15 @@ export default function Home() {
         )}
 
         {!hasSheets ? (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="rounded-[28px] border border-stone-200 bg-white/90 p-4 shadow-[0_24px_80px_rgba(66,39,9,0.08)] sm:p-6">
+          <div className="pt-16 lg:pt-24">
+            <h1 className="max-w-[16em] text-[clamp(34px,5vw,64px)] font-light leading-[1.25] tracking-[-0.02em]">
+              {COPY.heroTitle}
+            </h1>
+            <p className="mt-6 max-w-[40em] text-sm leading-relaxed text-ink-2">
+              {COPY.appSubtitle}
+            </p>
+
+            <div className="mt-14">
               <ExcelUploader
                 onUpload={handleUpload}
                 onLoadSample={handleLoadSample}
@@ -897,85 +866,110 @@ export default function Home() {
               />
             </div>
 
-            <div className="rounded-[28px] border border-stone-200 bg-stone-950 p-6 text-stone-100 shadow-[0_24px_80px_rgba(24,18,8,0.28)]">
-              <div className="text-[11px] font-semibold tracking-[0.25em] text-amber-300">
-                {COPY.guide}
-              </div>
-              <h2 className="mt-3 text-2xl font-black">{COPY.guideTitle}</h2>
-              <div className="mt-5 space-y-4 text-sm text-stone-300">
-                <div>
-                  <div className="font-semibold text-white">{COPY.guideStep1}</div>
-                  <div className="mt-1">{COPY.guideStep1Body}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-white">{COPY.guideStep2}</div>
-                  <div className="mt-1">{COPY.guideStep2Body}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-white">{COPY.guideStep3}</div>
-                  <div className="mt-1">{COPY.guideStep3Body}</div>
-                </div>
-              </div>
-
-              <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-stone-300">
-                {COPY.tipsLabel}
-                <div className="mt-2">{COPY.tipsBody}</div>
+            <section className="mt-20">
+              <div className="ui-eyebrow">{COPY.guide}</div>
+              <ol className="mt-6 grid border-t border-line md:grid-cols-3">
+                {[
+                  [COPY.guideStep1, COPY.guideStep1Body],
+                  [COPY.guideStep2, COPY.guideStep2Body],
+                  [COPY.guideStep3, COPY.guideStep3Body],
+                ].map(([title, body], index) => (
+                  <li
+                    key={title}
+                    className="border-b border-line py-8 md:border-b-0 md:border-l md:px-8 md:first:border-l-0 md:first:pl-0"
+                  >
+                    <div className="text-xs tabular-nums text-ink-3">0{index + 1}</div>
+                    <div className="mt-4 text-lg font-light">{title}</div>
+                    <p className="mt-3 text-[13px] leading-relaxed text-ink-2">{body}</p>
+                  </li>
+                ))}
+              </ol>
+              <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3 border-t border-line pt-6 text-[13px] text-ink-2">
+                <span>{COPY.tipsBody}</span>
                 <a
                   href="/sample-buylist.csv"
                   download="sample-buylist.csv"
-                  className="mt-3 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15"
+                  className="ui-link text-[13px]"
                 >
-                  {COPY.sampleCsv}
+                  {COPY.sampleCsv} →
                 </a>
               </div>
-            </div>
+            </section>
           </div>
         ) : (
-          <div className="space-y-4">
-            <SheetTabs
-              sheets={sheets}
-              activeIndex={activeSheet}
-              onSelect={setActiveSheet}
-            />
-
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-xs shadow-sm">
-              <div className="mr-1 font-black tracking-[0.14em] text-stone-500">
-                {COPY.checksTitle}
-              </div>
-              {issueChecks.map((check) => (
-                <div
-                  key={check.label}
-                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 ${buildCheckToneClasses(
-                    check.tone
-                  )}`}
+          <div className="pt-8">
+            <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+              <SheetTabs
+                sheets={sheets}
+                activeIndex={activeSheet}
+                onSelect={setActiveSheet}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(!showSettings)}
+                  aria-pressed={showSettings}
+                  className="ui-btn"
                 >
+                  {showSettings ? COPY.closeSettings : COPY.openSettings}
+                </button>
+                {sheets.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleExportAllSheets}
+                    disabled={generating}
+                    className="ui-btn"
+                  >
+                    全シートを書き出し（zip）
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleGeneratePng}
+                  disabled={generating}
+                  className="ui-btn ui-btn-primary"
+                >
+                  {generating && (
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border border-current border-t-transparent" />
+                  )}
+                  {generating ? COPY.generating : COPY.exportPng}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 py-4 text-[13px]">
+              <span className="ui-eyebrow">{COPY.checksTitle}</span>
+              {issueChecks.map((check) => (
+                <span key={check.label} className="flex items-center gap-2">
+                  <span className={`ui-dot ${buildToneDotClass(check.tone, "text-warn")}`} />
                   <span>
-                    <span className="font-black">{check.label}: </span>
-                    <span className="font-medium">{check.value}</span>
+                    <span className="text-ink-2">{check.label}</span>
+                    <span className="ml-2">{check.value}</span>
                   </span>
                   {check.label === "画像" && (
                     <button
                       type="button"
                       onClick={handleDownloadImages}
                       disabled={loading}
-                      className="rounded-full border border-current px-2 py-0.5 font-bold opacity-80 transition hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="ui-link ml-1 text-[13px] text-ink-2"
                     >
                       {loading ? COPY.fetching : "再確認"}
                     </button>
                   )}
-                </div>
+                </span>
               ))}
               {okChecks.length > 0 && (
-                <div className="px-1 font-medium text-emerald-700">
-                  ✓ 問題なし：{okChecks.map((check) => check.label).join("・")}
-                </div>
+                <span className="flex items-center gap-2 text-ink-2">
+                  <span className="ui-dot text-ok" />
+                  問題なし：{okChecks.map((check) => check.label).join("・")}
+                </span>
               )}
             </div>
 
-            <div className="flex flex-col gap-4 xl:flex-row">
-              <div className="min-w-0 flex-1 space-y-4">
-                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-                  <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1">
+            <div className="flex flex-col gap-10 xl:flex-row">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-3 border-y border-line py-3">
+                  <div className="ui-seg" role="group" aria-label="表示倍率">
                     {[
                       { label: COPY.zoomFit, value: "fit" as PreviewZoom },
                       { label: COPY.zoom50, value: 0.5 as PreviewZoom },
@@ -985,121 +979,72 @@ export default function Home() {
                       <button
                         key={option.label}
                         type="button"
+                        aria-pressed={previewZoom === option.value}
                         onClick={() => setPreviewZoom(option.value)}
-                        className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                          previewZoom === option.value
-                            ? "bg-stone-900 text-white"
-                            : "text-stone-600 hover:bg-white"
-                        }`}
                       >
                         {option.label}
                       </button>
                     ))}
                   </div>
-                  <div
-                    role="group"
-                    aria-label="並び順"
-                    className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1"
-                  >
-                    <span className="px-2 text-[11px] font-black text-stone-500">並び順</span>
-                    {SORT_MODE_OPTIONS.map((option) => {
-                      const isActive = (currentConfig.sortMode ?? "auto") === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          aria-pressed={isActive}
-                          title={option.title}
-                          onClick={() => handleSortModeChange(option.value)}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                            isActive ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-white"
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
+                  <div className="ui-seg" role="group" aria-label="並び順">
+                    {SORT_MODE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={(currentConfig.sortMode ?? "auto") === option.value}
+                        title={option.title}
+                        onClick={() => handleSortModeChange(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
                     {currentConfig.sortMode === "custom" && (
-                      <span className="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-900">
-                        手動調整
-                      </span>
+                      <span className="px-3 text-xs text-ink-2">手動調整</span>
                     )}
                   </div>
-                  <label className="flex items-center gap-2 text-xs font-bold text-stone-600">
-                    出力サイズ
-                    <select
-                      value={resolveOutputSize(currentConfig.outputSize).id}
-                      onChange={(event) =>
-                        handleConfigUpdate({ outputSize: event.target.value as OutputSizeId })
-                      }
-                      className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700"
-                    >
-                      {OUTPUT_SIZE_ORDER.map((sizeId) => (
-                        <option key={sizeId} value={sizeId}>
-                          {OUTPUT_SIZES[sizeId].label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <div className="flex items-center gap-1">
+                  <select
+                    aria-label="出力サイズ"
+                    title="出力サイズ"
+                    value={resolveOutputSize(currentConfig.outputSize).id}
+                    onChange={(event) =>
+                      handleConfigUpdate({ outputSize: event.target.value as OutputSizeId })
+                    }
+                    className="ui-select"
+                  >
+                    {OUTPUT_SIZE_ORDER.map((sizeId) => (
+                      <option key={sizeId} value={sizeId}>
+                        {OUTPUT_SIZES[sizeId].label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex items-center gap-4 px-2">
                     <button
                       type="button"
                       onClick={handleUndo}
                       disabled={!historyRef.current.canUndo}
                       title="元に戻す（Ctrl+Z）"
-                      className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="ui-link text-[13px]"
                     >
-                      ↶ 元に戻す
+                      元に戻す
                     </button>
                     <button
                       type="button"
                       onClick={handleRedo}
                       disabled={!historyRef.current.canRedo}
                       title="やり直す（Ctrl+Shift+Z）"
-                      className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="ui-link text-[13px]"
                     >
-                      ↷ やり直す
-                    </button>
-                  </div>
-                  <div className="ml-auto flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowSettings(!showSettings)}
-                      aria-pressed={showSettings}
-                      className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
-                    >
-                      {showSettings ? COPY.closeSettings : COPY.openSettings}
-                    </button>
-                    {sheets.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={handleExportAllSheets}
-                        disabled={generating}
-                        className="rounded-xl border border-red-700 px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        全シートを書き出し（zip）
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleGeneratePng}
-                      disabled={generating}
-                      className="inline-flex items-center gap-2 rounded-xl bg-red-700 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {generating && (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      )}
-                      {generating ? COPY.generating : COPY.exportPng}
+                      やり直す
                     </button>
                   </div>
                 </div>
 
                 <div
                   ref={previewViewportRef}
-                  className="overflow-auto rounded-[28px] border border-stone-300/70 bg-[#eee7d8] p-4 shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
+                  className="mt-6 overflow-auto bg-surface p-4 sm:p-6"
                 >
                   <div
-                    className="origin-top-left overflow-hidden rounded-[24px] border border-[#c8b482]/80 bg-[#f1eadc] shadow-[0_24px_80px_rgba(66,39,9,0.14)]"
+                    className="origin-top-left overflow-hidden"
                     style={{
                       width: `${Math.round(canvasWidth * previewScale)}px`,
                       height: `${Math.round(previewCanvasHeight * previewScale)}px`,
@@ -1124,19 +1069,17 @@ export default function Home() {
                   </div>
                 </div>
 
+                <p className="mt-4 text-xs leading-relaxed text-ink-2">{COPY.helper}</p>
+
                 <OverflowCardList
                   cards={currentConfig.overflowCards ?? []}
                   onSwapIn={handleSwapInOverflow}
                 />
-
-                <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-xs text-stone-500 shadow-sm">
-                  {COPY.helper}
-                </div>
               </div>
 
               {showSettings && (
-                <div className="w-full xl:w-[360px] xl:flex-shrink-0">
-                  <div className="settings-scroll-panel xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-2">
+                <div className="w-full xl:w-[340px] xl:flex-shrink-0">
+                  <div className="settings-scroll-panel xl:sticky xl:top-[88px] xl:max-h-[calc(100vh-112px)] xl:overflow-y-auto xl:pr-2">
                     <SettingsPanel
                       config={currentConfig}
                       onChange={handleConfigUpdate}
