@@ -20,6 +20,7 @@ import {
   parseWorkFileText,
   saveCurrentWork,
 } from "@/lib/work-storage";
+import { ZipEntry, buildUniqueFileNames, createZip } from "@/lib/zip";
 
 type NoticeTone = "info" | "success" | "error";
 type PreviewZoom = "fit" | 0.5 | 0.75 | 1;
@@ -99,6 +100,44 @@ const COPY = {
   darkMode: "ダーク",
   lightMode: "ライト",
 };
+
+async function ensureSheetImages(config: SheetConfig): Promise<SheetConfig> {
+  if (config.cards.every((card) => card.imageData)) return config;
+
+  const response = await fetch("/api/download-images", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cards: config.cards }),
+  });
+  if (!response.ok) throw new Error(COPY.imageError);
+
+  const data = await response.json();
+  return { ...config, cards: data.cards };
+}
+
+async function requestSheetPng(config: SheetConfig): Promise<Blob> {
+  const response = await fetch("/api/generate-png", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ config }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.error || COPY.pngFallbackError);
+  }
+
+  return response.blob();
+}
+
+function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 function formatSavedAt(savedAt: string): string {
   const date = new Date(savedAt);
@@ -360,48 +399,19 @@ export default function Home() {
     });
 
     try {
-      const needsImageFetch = config.cards.some((card) => !card.imageData);
-      let finalConfig = config;
-
-      if (needsImageFetch) {
-        const downloadResponse = await fetch("/api/download-images", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cards: config.cards }),
-        });
-
-        if (!downloadResponse.ok) throw new Error(COPY.imageError);
-
-        const downloadData = await downloadResponse.json();
-        finalConfig = { ...config, cards: downloadData.cards };
-
-        const nextSheets = [...sheets];
-        nextSheets[activeSheet] = finalConfig;
-        setSheets(nextSheets);
+      const finalConfig = await ensureSheetImages(config);
+      if (finalConfig !== config) {
+        setSheets((current) =>
+          current.map((sheet, index) => (index === activeSheet ? finalConfig : sheet))
+        );
       }
 
-      const response = await fetch("/api/generate-png", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: finalConfig }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || COPY.pngFallbackError);
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${config.sheetName}.png`;
-      link.click();
-      URL.revokeObjectURL(url);
+      const [fileName] = buildUniqueFileNames([config.sheetName], ".png");
+      downloadBlob(await requestSheetPng(finalConfig), fileName);
 
       setNotice({
         tone: "success",
-        message: `${config.sheetName}.png${COPY.pngSuccessSuffix}`,
+        message: `${fileName}${COPY.pngSuccessSuffix}`,
       });
     } catch (error) {
       console.error("PNG generation error:", error);
@@ -414,6 +424,60 @@ export default function Home() {
       setGenerating(false);
     }
   }, [activeSheet, sheets]);
+
+  const handleExportAllSheets = useCallback(async () => {
+    if (sheets.length === 0) return;
+
+    setGenerating(true);
+    const fileNames = buildUniqueFileNames(
+      sheets.map((sheet) => sheet.sheetName),
+      ".png"
+    );
+    const entries: ZipEntry[] = [];
+
+    try {
+      for (let index = 0; index < sheets.length; index++) {
+        const config = sheets[index];
+        setNotice({
+          tone: "info",
+          message: `全シートを書き出し中（${index + 1}/${sheets.length}）：${config.sheetName}`,
+        });
+
+        const finalConfig = await ensureSheetImages(config);
+        if (finalConfig !== config) {
+          // Keep fetched images so the autosave and later exports reuse them.
+          setSheets((current) =>
+            current.map((sheet, sheetIndex) => (sheetIndex === index ? finalConfig : sheet))
+          );
+        }
+
+        const png = await requestSheetPng(finalConfig);
+        entries.push({
+          name: fileNames[index],
+          data: new Uint8Array(await png.arrayBuffer()),
+        });
+      }
+
+      const zip = createZip(entries);
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      const zipName = `kaitori-pop-${date}.zip`;
+      downloadBlob(new Blob([zip], { type: "application/zip" }), zipName);
+      setNotice({
+        tone: "success",
+        message: `${sheets.length}シート分の PNG を ${zipName} にまとめて書き出しました。`,
+      });
+    } catch (error) {
+      console.error("Export all sheets error:", error);
+      const failedSheet = sheets[entries.length]?.sheetName;
+      const detail = error instanceof Error ? error.message : COPY.pngFallbackError;
+      setNotice({
+        tone: "error",
+        message: failedSheet ? `${failedSheet} で止まりました。${detail}` : detail,
+      });
+    } finally {
+      setGenerating(false);
+    }
+  }, [sheets]);
 
   const handleCardUpdate = useCallback(
     (cardIndex: number, updates: Partial<Card>) => {
@@ -770,6 +834,15 @@ export default function Home() {
                     )}
                     {generating ? COPY.generating : COPY.exportPng}
                   </button>
+                  {sheets.length > 1 && (
+                    <button
+                      onClick={handleExportAllSheets}
+                      disabled={generating}
+                      className="rounded-xl border border-red-700 px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      全シートを書き出し（zip）
+                    </button>
+                  )}
                   <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1">
                     {[
                       { label: COPY.zoomFit, value: "fit" as PreviewZoom },
