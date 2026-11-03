@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { RowLabel, SheetConfig } from "@/lib/types";
+import { THEMES, THEME_ORDER, ThemeId, resolveTheme } from "@/lib/themes";
 
 interface Props {
   config: SheetConfig;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 interface SheetPresetSettings {
+  theme?: ThemeId;
   title: string;
   titleSubtitle?: string;
   showTitleSubtitle?: boolean;
@@ -37,6 +39,20 @@ interface SheetPreset {
 
 const PRESET_STORAGE_KEY = "kaitori-pop-sheet-presets";
 
+// Switching games swaps texts that still hold the previous game's default,
+// and leaves anything the user typed alone.
+function buildThemeChange(config: SheetConfig, nextId: ThemeId): Partial<SheetConfig> {
+  const current = resolveTheme(config.theme);
+  const next = THEMES[nextId];
+  const updates: Partial<SheetConfig> = { theme: nextId };
+  if (config.title === current.defaultTitle) updates.title = next.defaultTitle;
+  if ((config.titleSubtitle ?? "") === current.defaultSubtitle) {
+    updates.titleSubtitle = next.defaultSubtitle;
+  }
+  if (current.game !== next.game) updates.showRarityBadge = next.game === "lorcana";
+  return updates;
+}
+
 function buildTodayUpdatedAtText(): string {
   const today = new Date();
   const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -48,6 +64,7 @@ const LOGO_MAX_DIMENSION = 900;
 
 function extractPresetSettings(config: SheetConfig): SheetPresetSettings {
   return {
+    theme: config.theme,
     title: config.title,
     titleSubtitle: config.titleSubtitle,
     showTitleSubtitle: config.showTitleSubtitle,
@@ -295,6 +312,43 @@ export default function SettingsPanel({ config, onChange }: Props) {
       <Section title="基本情報" summary="タイトル、CTA、更新日の表示を調整します。">
         <div>
           <label className="mb-1 block text-sm font-medium text-stone-700">
+            TCG・デザイン
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {THEME_ORDER.map((themeId) => {
+              const theme = THEMES[themeId];
+              const isActive = resolveTheme(config.theme).id === themeId;
+              return (
+                <button
+                  key={themeId}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => onChange(buildThemeChange(config, themeId))}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${
+                    isActive
+                      ? "border-stone-900 bg-stone-900 text-white"
+                      : "border-stone-300 text-stone-700 hover:bg-stone-50"
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 rounded-full border border-white/40"
+                    style={{
+                      background: `linear-gradient(135deg, ${theme.vars["--panel-bg"] ?? "#f1eadc"} 50%, ${theme.vars["--accent"] ?? "#b82020"} 50%)`,
+                    }}
+                  />
+                  {theme.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-xs text-stone-500">
+            各ゲームの公式サイトの配色・書体に合わせます。タイトルとサブタイトルは、初期値のままなら一緒に切り替わります。
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-stone-700">
             タイトル
           </label>
           <input
@@ -468,7 +522,7 @@ export default function SettingsPanel({ config, onChange }: Props) {
         </label>
       </Section>
 
-      <Section title="ロゴ" summary="左上に表示するロゴとタイトルロゴを差し替えます。" defaultOpen={false}>
+      <Section title="ロゴ" summary="左上に表示するロゴと、ゲームのロゴ（公式ロゴの画像など）を差し替えます。" defaultOpen={false}>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-xs font-medium text-stone-600">
             ロゴ
@@ -517,7 +571,7 @@ export default function SettingsPanel({ config, onChange }: Props) {
             </div>
           </label>
           <label className="block text-xs font-medium text-stone-600">
-            タイトルロゴ
+            ゲームロゴ
             <input
               type="file"
               accept="image/*"

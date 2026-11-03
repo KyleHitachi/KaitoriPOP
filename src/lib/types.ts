@@ -1,3 +1,5 @@
+import type { ThemeId } from "./themes";
+
 // "none": no image URL, so the renderer uses the placeholder.
 export type ImageStatus = "ok" | "failed" | "none";
 
@@ -38,6 +40,9 @@ export interface RowLabel {
 
 export interface SheetConfig {
   sheetName: string;
+  // Look and game conventions; absent on boards saved before themes, which
+  // render with the classic palette.
+  theme?: ThemeId;
   title: string;
   titleSubtitle?: string;
   showTitleSubtitle?: boolean;
