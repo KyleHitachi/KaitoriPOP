@@ -13,7 +13,7 @@ const COPY = {
   loadingBody:
     "データを解析して編集用のシートを作成しています。",
   title:
-    "買取表PNGを作成",
+    "ファイルを選ぶ",
   body:
     "Excel / CSV をドラッグ&ドロップ、またはクリックして選択してください。",
   badge:
@@ -53,10 +53,8 @@ export default function ExcelUploader({ onUpload, onLoadSample, loading }: Props
 
   return (
     <div
-      className={`group cursor-pointer rounded-[24px] border-2 border-dashed p-7 text-center transition-all sm:p-12 ${
-        dragOver
-          ? "border-amber-500 bg-amber-50 shadow-[0_20px_60px_rgba(120,70,5,0.12)]"
-          : "border-stone-300 bg-[linear-gradient(180deg,_#fffdf9,_#f8f4ec)] hover:border-stone-400 hover:shadow-[0_20px_60px_rgba(120,70,5,0.08)]"
+      className={`group cursor-pointer border px-8 py-14 transition-colors duration-300 sm:px-12 sm:py-20 ${
+        dragOver ? "border-ink bg-surface" : "border-line hover:border-ink"
       }`}
       onDragOver={(event) => {
         event.preventDefault();
@@ -75,46 +73,34 @@ export default function ExcelUploader({ onUpload, onLoadSample, loading }: Props
       />
 
       {loading ? (
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-amber-200 bg-white shadow-sm">
-            <div className="h-8 w-8 animate-spin rounded-full border-3 border-amber-500 border-t-transparent" />
-          </div>
+        <div className="flex items-center gap-6">
+          <div className="h-10 w-10 shrink-0 animate-spin rounded-full border border-ink border-t-transparent" />
           <div>
-            <p className="text-lg font-semibold text-stone-800">{COPY.loadingTitle}</p>
-            <p className="mt-1 text-sm text-stone-500">{COPY.loadingBody}</p>
+            <p className="text-2xl font-light">{COPY.loadingTitle}</p>
+            <p className="mt-2 text-[13px] text-ink-2">{COPY.loadingBody}</p>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-stone-200 bg-white shadow-sm transition group-hover:scale-105 sm:h-20 sm:w-20">
+        <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
+          <div className="flex items-start gap-6">
             <svg
-              className="h-10 w-10 text-stone-500"
+              className="mt-1 h-9 w-9 shrink-0 text-ink transition-transform duration-300 group-hover:-translate-y-1"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 16V4m0 0l-5 5m5-5l5 5M4 20h16" />
             </svg>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-lg font-black tracking-tight text-stone-900 sm:text-xl">
-              {COPY.title}
-            </p>
-            <p className="text-sm text-stone-600">
-              Excel・CSVをここにドロップ、またはクリックして選択
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center gap-2 sm:flex-row">
-            <div className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold tracking-[0.18em] text-stone-500">
-              XLSX / CSV 対応
+            <div>
+              <p className="text-2xl font-light tracking-[-0.01em] sm:text-[28px]">{COPY.title}</p>
+              <p className="mt-3 text-[13px] text-ink-2">
+                Excel・CSV をここにドロップ、またはクリックして選択（XLSX・CSV 対応）
+              </p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
             {onLoadSample && (
               <button
                 type="button"
@@ -122,7 +108,7 @@ export default function ExcelUploader({ onUpload, onLoadSample, loading }: Props
                   event.stopPropagation();
                   onLoadSample();
                 }}
-                className="rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700"
+                className="ui-btn"
               >
                 {COPY.sample}
               </button>

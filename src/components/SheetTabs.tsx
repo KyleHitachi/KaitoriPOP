@@ -14,7 +14,7 @@ export default function SheetTabs({ sheets, activeIndex, onSelect }: Props) {
 
   return (
     <div className="overflow-x-auto">
-      <div role="tablist" aria-label="シート" className="flex min-w-max gap-1.5">
+      <div role="tablist" aria-label="シート" className="flex min-w-max gap-8">
         {sheets.map((sheet, index) => {
           const isActive = index === activeIndex;
           return (
@@ -24,16 +24,12 @@ export default function SheetTabs({ sheets, activeIndex, onSelect }: Props) {
               role="tab"
               aria-selected={isActive}
               onClick={() => onSelect(index)}
-              className={`flex items-baseline gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
-                isActive
-                  ? "border-stone-900 bg-stone-900 text-white shadow-sm"
-                  : "border-stone-300 bg-white text-stone-600 hover:border-stone-400 hover:text-stone-900"
+              className={`ui-link flex items-baseline gap-2 text-[15px] ${
+                isActive ? "text-ink" : "text-ink-3 hover:text-ink"
               }`}
             >
               <span>{sheet.sheetName}</span>
-              <span className={`text-xs ${isActive ? "text-stone-300" : "text-stone-400"}`}>
-                {sheet.cards.length}枚
-              </span>
+              <span className="text-[11px] tabular-nums text-ink-3">{sheet.cards.length}</span>
             </button>
           );
         })}

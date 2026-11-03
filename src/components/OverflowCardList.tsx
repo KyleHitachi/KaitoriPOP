@@ -18,45 +18,46 @@ export default function OverflowCardList({ cards, onSwapIn }: Props) {
   if (cards.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+    <section className="mt-12">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="text-sm font-black text-stone-900">
-          掲載外のカード（{cards.length}枚）
+        <div className="flex items-baseline gap-3">
+          <span className="text-lg font-light">掲載外のカード</span>
+          <span className="text-xs tabular-nums text-ink-3">{cards.length}</span>
         </div>
-        <div className="text-xs text-stone-500">
+        <div className="text-xs text-ink-2">
           「掲載する」を押すと、買取表でいちばん安いカードと入れ替わります。
         </div>
       </div>
-      <div className="mt-3 max-h-[320px] overflow-y-auto">
-        <table className="w-full text-left text-xs">
-          <thead className="text-stone-500">
+      <div className="mt-4 max-h-[360px] overflow-y-auto border-t border-ink">
+        <table className="w-full text-left text-[13px]">
+          <thead className="text-[11px] text-ink-2">
             <tr>
-              <th className="py-1.5 pr-3 font-semibold">カード名</th>
-              <th className="py-1.5 pr-3 font-semibold">セット</th>
-              <th className="py-1.5 pr-3 font-semibold">カテゴリ</th>
-              <th className="py-1.5 pr-3 text-right font-semibold">価格</th>
-              <th className="py-1.5" />
+              <th className="py-2.5 pr-3 font-normal">カード名</th>
+              <th className="py-2.5 pr-3 font-normal">セット</th>
+              <th className="py-2.5 pr-3 font-normal">カテゴリ</th>
+              <th className="py-2.5 pr-3 text-right font-normal">価格</th>
+              <th className="py-2.5" />
             </tr>
           </thead>
           <tbody>
             {cards.map((card, index) => (
-              <tr key={card.id} className="border-t border-stone-200 text-stone-700">
-                <td className="py-1.5 pr-3">
-                  <div className="font-semibold text-stone-900">{card.nameJp || card.nameEn}</div>
+              <tr key={card.id} className="border-t border-line text-ink-2">
+                <td className="py-2.5 pr-3">
+                  <div className="text-ink">{card.nameJp || card.nameEn}</div>
                   {card.nameJp && card.nameEn && card.nameEn !== card.nameJp && (
-                    <div className="text-stone-500">{card.nameEn}</div>
+                    <div className="text-xs text-ink-3">{card.nameEn}</div>
                   )}
                 </td>
-                <td className="py-1.5 pr-3">{card.set}</td>
-                <td className="py-1.5 pr-3">{card.category}</td>
-                <td className="py-1.5 pr-3 text-right font-semibold tabular-nums">
+                <td className="py-2.5 pr-3">{card.set}</td>
+                <td className="py-2.5 pr-3">{card.category}</td>
+                <td className="py-2.5 pr-3 text-right tabular-nums text-ink">
                   {formatCardPrice(card)}
                 </td>
-                <td className="py-1.5 text-right">
+                <td className="py-2.5 text-right">
                   <button
                     type="button"
                     onClick={() => onSwapIn(index)}
-                    className="whitespace-nowrap rounded-lg border border-stone-300 px-3 py-1 font-bold text-stone-700 transition hover:bg-stone-50"
+                    className="ui-btn ui-btn-sm"
                   >
                     掲載する
                   </button>
@@ -66,6 +67,6 @@ export default function OverflowCardList({ cards, onSwapIn }: Props) {
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }
