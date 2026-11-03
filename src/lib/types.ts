@@ -31,6 +31,8 @@ export interface Card {
   // Only present in work files saved before images moved server-side.
   imageData?: string;
   imageStatus?: ImageStatus;
+  // Row position in the imported sheet, used for the Excel sort order.
+  sourceIndex?: number;
 }
 
 export interface RowLabel {
@@ -38,6 +40,9 @@ export interface RowLabel {
   text: string;
   visible: boolean;
 }
+
+// "auto" is the category-aware sort, "custom" a hand-made order.
+export type SortMode = "auto" | "price-desc" | "excel" | "custom";
 
 export interface SheetConfig {
   sheetName: string;
@@ -53,6 +58,8 @@ export interface SheetConfig {
   // Cards past the 36-card board, kept so they can be swapped in later.
   overflowCards?: Card[];
   sortedOrder: number[];
+  // Absent means "auto".
+  sortMode?: SortMode;
   rowLabels: RowLabel[];
   showCardNames: boolean;
   showExpansionName: boolean;

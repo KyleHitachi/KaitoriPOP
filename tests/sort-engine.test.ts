@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sortSheet } from "../src/lib/sort-engine";
+import { applySortMode, sortSheet } from "../src/lib/sort-engine";
 import { SheetConfig, Card } from "../src/lib/types";
 
 function buildCard(overrides: Partial<Card>): Card {
@@ -120,4 +120,27 @@ test("sortSheet preserves duplicate collector numbers using id-based mapping", (
   const sortedIds = sorted.sortedOrder.map((index) => config.cards[index].id);
 
   assert.deepEqual(sortedIds, ["b", "a"]);
+});
+
+test("applySortMode switches between price, Excel row order and the automatic sort", () => {
+  const baseConfig = buildConfig(
+    [
+      { ...buildCard({ id: "high", nameEn: "High", priceJp: 9000 }), sourceIndex: 1 },
+      { ...buildCard({ id: "mid", nameEn: "Mid", priceJp: 3000 }), sourceIndex: 2 },
+      { ...buildCard({ id: "low", nameEn: "Low", priceJp: 1000 }), sourceIndex: 0 },
+    ],
+    "Standard"
+  );
+
+  const excelSorted = applySortMode(baseConfig, "excel");
+  assert.deepEqual(excelSorted.sortedOrder, [2, 0, 1]);
+  assert.equal(excelSorted.sortMode, "excel");
+
+  const priceSorted = applySortMode(excelSorted, "price-desc");
+  assert.deepEqual(priceSorted.sortedOrder, [0, 1, 2]);
+  assert.equal(priceSorted.sortMode, "price-desc");
+
+  const autoSorted = applySortMode(excelSorted, "auto");
+  assert.deepEqual(autoSorted.sortedOrder, sortSheet(baseConfig).sortedOrder);
+  assert.equal(autoSorted.sortMode, "auto");
 });

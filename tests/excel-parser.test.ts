@@ -540,3 +540,59 @@ test("parseExcel orders categories by the sheet category order", () => {
   assert.deepEqual(sheet.rowLabels, []);
   assert.deepEqual(sortedNames, ["Spell", "Fetch"]);
 });
+
+function buildWorkbookWithSheets(sheets: Array<{ name: string; rows: unknown[][] }>): ArrayBuffer {
+  const workbook = XLSX.utils.book_new();
+  for (const sheet of sheets) {
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(sheet.rows), sheet.name);
+  }
+  return XLSX.write(workbook, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+}
+
+test("parseExcel derives EN and IT price labels from the language column", () => {
+  const buffer = buildWorkbook([
+    ["No", "日本語名", "英語名", "セット", "言語", "状態", "JP価格", "EN価格", "カテゴリ", "備考", "画像URL"],
+    [1, "The Tabernacle at Pendrell Vale", "The Tabernacle at Pendrell Vale", "LEG", "EN/IT", "SP", 380000, 195000, "再録禁止", "", ""],
+  ]);
+
+  const card = parseExcel(buffer).sheets[0].cards[0];
+
+  assert.equal(card.priceJpLabel, "EN");
+  assert.equal(card.priceEnLabel, "IT");
+});
+
+test("parseExcel keeps the sheet row order for the Excel sort", () => {
+  const buffer = buildWorkbook(
+    [
+      ["No", "日本語名", "英語名", "セット", "言語", "状態", "JP価格", "EN価格", "カテゴリ"],
+      [1, "低価格", "Low", "SET", "JP", "NM", 1000, null, "Standard"],
+      [2, "高価格", "High", "SET", "JP", "NM", 9000, null, "Standard"],
+      [3, "中価格", "Mid", "SET", "JP", "NM", 3000, null, "Standard"],
+    ],
+    "Standard"
+  );
+
+  const sheet = parseExcel(buffer).sheets[0];
+
+  assert.deepEqual(
+    [...sheet.cards].sort((a, b) => (a.sourceIndex ?? 0) - (b.sourceIndex ?? 0)).map((card) => card.nameEn),
+    ["Low", "High", "Mid"]
+  );
+});
+
+test("parseExcel shows condition chips only on the first two sheets", () => {
+  const rows = [
+    ["No", "日本語名", "英語名", "セット", "言語", "状態", "JP価格", "EN価格", "カテゴリ"],
+    [1, "カード", "Card", "SET", "JP", "SP", 1000, null, "Standard"],
+  ];
+  const buffer = buildWorkbookWithSheets([
+    { name: "01_再録禁止HighEnd", rows },
+    { name: "02_Dual Lands", rows },
+    { name: "03_HOB・SOA Silver", rows },
+  ]);
+
+  assert.deepEqual(
+    parseExcel(buffer).sheets.map((sheet) => sheet.showCondition),
+    [true, true, false]
+  );
+});

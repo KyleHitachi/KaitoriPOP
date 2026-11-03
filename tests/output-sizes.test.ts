@@ -33,7 +33,7 @@ test("A4 sizes keep the paper ratio", () => {
 });
 
 test("the monitor board keeps its original layout without a page wrapper", () => {
-  const html = renderBuylistHtml(buildSheet());
+  const html = renderBuylistHtml({ ...buildSheet(), outputSize: undefined });
   assert.equal(resolveOutputSize(undefined).id, "monitor");
   assert.doesNotMatch(html, /<div class="page"/);
   assert.equal(countRows(html), 4);
@@ -44,4 +44,12 @@ test("fixed sizes wrap the board in a canvas of that size with their columns", (
   assert.match(html, /<div class="page" style="width:1920px;height:1920px">/);
   assert.equal(countRows(html), 5);
   assert.match(html, /max-width: calc\(\(1920px - 56px - 56px\) \/ 8\)/);
+});
+
+test("imported sheets get the fixed 1920 x 1355 landscape canvas", () => {
+  const sheet = buildSheet();
+  assert.equal(sheet.outputSize, "sns-landscape");
+  const html = renderBuylistHtml(sheet);
+  assert.match(html, /<div class="page" style="width:1920px;height:1355px">/);
+  assert.equal(countRows(html), 4);
 });

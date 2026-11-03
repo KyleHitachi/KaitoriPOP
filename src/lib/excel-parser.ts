@@ -10,7 +10,9 @@ import {
   GRID_TOTAL,
 } from "./types";
 import { resolveSpecialFoilBadge } from "./foil-badge";
-import { sortSheet } from "./sort-engine";
+import { buildPriceDescendingOrder, sortSheet } from "./sort-engine";
+import { shouldShowConditionForSheetIndex } from "./event-sheet-policy";
+import { DEFAULT_IMPORT_OUTPUT_SIZE } from "./output-sizes";
 import { THEMES, detectGame } from "./themes";
 
 export interface ParseWarning {
@@ -167,7 +169,7 @@ interface ParsedPriceCell {
 
 function normalizePriceLabel(value: string): string | undefined {
   const normalized = value.normalize("NFKC").trim().toUpperCase();
-  if (normalized === "NF" || normalized === "RF" || normalized === "CF") {
+  if (["NF", "RF", "CF", "EN", "IT"].includes(normalized)) {
     return normalized;
   }
   return undefined;
@@ -175,6 +177,17 @@ function normalizePriceLabel(value: string): string | undefined {
 
 function inferPriceLabelFromHeader(value: unknown): string | undefined {
   return normalizePriceLabel(String(value ?? ""));
+}
+
+// A language cell such as "EN/IT" labels the JP and EN price columns.
+function inferPriceLabelsFromLanguage(
+  value: unknown
+): [string | undefined, string | undefined] {
+  const [first, second] = String(value ?? "")
+    .normalize("NFKC")
+    .split("/")
+    .map((part) => normalizePriceLabel(part));
+  return [first, second];
 }
 
 function parsePrice(value: unknown): number | null {
@@ -363,6 +376,7 @@ function buildCard(
       ),
     foilLabel: foilBadge?.label,
     isLand: isLandCard(values.category),
+    sourceIndex: index,
   };
 }
 
@@ -385,13 +399,16 @@ function buildCardsFromHeaderRows(
   for (const row of rows.slice(headerInfo.headerRowIndex + 1)) {
     const no = Number(valueAt(row, headerInfo.columnMap.no));
     if (Number.isNaN(no) || no === 0) continue;
+    const language = valueAt(row, headerInfo.columnMap.lang);
+    const [priceJpLanguageLabel, priceEnLanguageLabel] =
+      inferPriceLabelsFromLanguage(language);
     const priceJp = parsePriceCell(
       valueAt(row, headerInfo.columnMap.priceJp),
-      priceJpHeaderLabel
+      priceJpHeaderLabel ?? priceJpLanguageLabel
     );
     const priceEn = parsePriceCell(
       valueAt(row, headerInfo.columnMap.priceEn),
-      priceEnHeaderLabel
+      priceEnHeaderLabel ?? priceEnLanguageLabel
     );
 
     cards.push(
@@ -402,7 +419,7 @@ function buildCardsFromHeaderRows(
           nameEn: String(valueAt(row, headerInfo.columnMap.nameEn) ?? ""),
           set: String(valueAt(row, headerInfo.columnMap.set) ?? ""),
           rarity: String(valueAt(row, headerInfo.columnMap.rarity) ?? ""),
-          lang: String(valueAt(row, headerInfo.columnMap.lang) ?? "EN"),
+          lang: String(language ?? "EN"),
           condition: String(valueAt(row, headerInfo.columnMap.condition) ?? "NM"),
           priceJp: priceJp.price,
           priceEn: priceEn.price,
@@ -472,13 +489,6 @@ function getCardSortPrice(card: Card): number {
   return Math.max(card.priceJp ?? 0, card.priceEn ?? 0);
 }
 
-function buildPriceDescendingOrder(cards: Card[]): number[] {
-  return cards
-    .map((card, index) => ({ index, price: getCardSortPrice(card) }))
-    .sort((left, right) => right.price - left.price || left.index - right.index)
-    .map((item) => item.index);
-}
-
 function sortCardsByPriceDescending(cards: Card[]): Card[] {
   return buildPriceDescendingOrder(cards).map((index) => cards[index]);
 }
@@ -488,7 +498,7 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
   const sheets: SheetConfig[] = [];
   const warnings: ParseWarning[] = [];
 
-  for (const sheetName of workbook.SheetNames) {
+  for (const [sheetIndex, sheetName] of workbook.SheetNames.entries()) {
     const sheet = workbook.Sheets[sheetName];
     const matrixRows = XLSX.utils.sheet_to_json(sheet, {
       header: 1,
@@ -517,6 +527,7 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
     sheets.push(sortSheet({
       sheetName,
       theme: theme.id,
+      outputSize: DEFAULT_IMPORT_OUTPUT_SIZE,
       title: theme.defaultTitle,
       titleSubtitle: theme.defaultSubtitle,
       showTitleSubtitle: true,
@@ -526,8 +537,9 @@ export function parseExcel(buffer: ArrayBuffer, fileName?: string): ParseResult 
       rowLabels: [],
       showCardNames: false,
       showExpansionName: true,
-      showRarityBadge: theme.game === "lorcana",
-      showCondition: true,
+      showRarityBadge:
+        theme.game === "lorcana" || trimmedCards.some((card) => card.rarity.trim() !== ""),
+      showCondition: shouldShowConditionForSheetIndex(sheetIndex),
       logoGgHeight: 96,
       logoMtgHeight: 64,
       ctaMain: DEFAULT_CTA_MAIN,
