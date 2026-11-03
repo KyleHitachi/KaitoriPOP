@@ -194,6 +194,7 @@ function buildCardHtml(
     showExpansionName: boolean;
     showRarityBadge: boolean;
     showCondition: boolean;
+    editorial: boolean;
   }
 ): string {
   const foil = card.foilOverride ?? card.foil;
@@ -235,16 +236,9 @@ function buildCardHtml(
                 </div>`
       : "";
 
-  return `
-    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}">
-      <div class="${frameClasses}">
-        <div class="frame-inner">
-          <img src="${escapeHtml(imgSrc)}" alt="${imageAlt}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(fallbackSrc)}';" />
-          <div class="frame-top-glow"></div>
-          ${options.showCondition ? `<div class="condition-chip">${escapeHtml(card.condition)}</div>` : ""}
-          ${
-            foil || (options.showRarityBadge && rarity && rarityStyle)
-              ? `<div class="badge-stack">
+  const badgeStackHtml =
+    foil || (options.showRarityBadge && rarity && rarityStyle)
+      ? `<div class="badge-stack">
                 ${
                   foilBadge
                     ? `<div class="foil-badge" style="background:${foilStyle.background};border:${foilStyle.border};box-shadow:${foilStyle.shadow};">${foilBadgeLines.length > 1 ? `<div class="foil-badge-special">${foilBadgeTextHtml}</div>` : foilBadgeTextHtml}</div>`
@@ -256,8 +250,38 @@ function buildCardHtml(
                     : ""
                 }
               </div>`
-              : ""
-          }
+      : "";
+  const imageHtml = `<img src="${escapeHtml(imgSrc)}" alt="${imageAlt}" onerror="this.onerror=null;this.setAttribute('data-fallback',this.getAttribute('src'));this.src='${escapeHtml(fallbackSrc)}';" />`;
+
+  if (options.editorial) {
+    const metaParts = [
+      options.showCondition ? `<span class="caption-cond">${escapeHtml(card.condition)}</span>` : "",
+      options.showExpansionName ? `<span class="caption-set">${escapeHtml(buildSetLabel(card))}</span>` : "",
+    ].filter(Boolean);
+    return `
+    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}" data-card-id="${escapeHtml(card.id)}">
+      <div class="${frameClasses}">
+        <div class="frame-inner">
+          ${imageHtml}
+          ${badgeStackHtml}
+        </div>
+      </div>
+      <div class="caption">
+        ${metaParts.length > 0 ? `<div class="caption-meta">${metaParts.join("")}</div>` : ""}
+        ${nameBlockHtml}
+        ${buildPriceHtml(card)}
+      </div>
+    </div>`;
+  }
+
+  return `
+    <div class="${cellClasses}" data-sorted-index="${options.sortedIndex}" data-card-id="${escapeHtml(card.id)}">
+      <div class="${frameClasses}">
+        <div class="frame-inner">
+          ${imageHtml}
+          <div class="frame-top-glow"></div>
+          ${options.showCondition ? `<div class="condition-chip">${escapeHtml(card.condition)}</div>` : ""}
+          ${badgeStackHtml}
           <div class="bot">
             <div class="bot-inner">
               ${options.showExpansionName ? `<div class="set">${escapeHtml(buildSetLabel(card))}</div>` : ""}
@@ -287,6 +311,262 @@ function buildFooterHtml(footerText: string): string {
 const PANEL_PATTERN =
   "linear-gradient(135deg, rgba(121,96,53,0.05) 0 1px, transparent 1px 52px), linear-gradient(90deg, rgba(255,255,255,0.45), transparent 42%, rgba(153,118,54,0.08)), linear-gradient(180deg, #f4efe4 0%, #e7dfce 100%)";
 
+const EDITORIAL_CSS = String.raw`
+/* Editorial layout: the card is shown whole and its prices sit in a
+   caption underneath; type and colour still come from the theme. */
+/* In a fixed canvas only the page paints the background, so a board that
+   does not fill the canvas shows no seam. */
+.page .panel {
+  background: none;
+}
+.panel {
+  --rule: color-mix(in srgb, var(--title-ink) 16%, transparent);
+  --caption-ink: var(--title-ink);
+  --caption-muted: color-mix(in srgb, var(--title-ink) 58%, transparent);
+}
+.hdr {
+  flex-wrap: wrap;
+  align-items: flex-end;
+  row-gap: 20px;
+  padding: 26px 52px 20px;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  box-shadow: none;
+}
+.hdr-title {
+  min-width: 0;
+}
+.title-kicker {
+  margin-bottom: 10px;
+  color: var(--caption-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.4em;
+}
+.title-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 28px;
+  row-gap: 10px;
+}
+.title-text {
+  font-size: 64px;
+  line-height: 0.95;
+}
+.title-subtitle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--caption-muted);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+}
+.title-subtitle span {
+  color: inherit;
+}
+.hdr-side {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 28px;
+}
+.hdr-cta {
+  min-width: 0;
+  border: 0;
+  border-radius: 4px;
+  padding: 14px 26px;
+  text-align: left;
+  box-shadow: none;
+}
+.hdr-cta .cta-main {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.hdr-cta .cta-sub {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.hdr-divider {
+  height: 0;
+}
+.grid {
+  padding: 22px 52px 0;
+}
+.row {
+  gap: 16px;
+  margin-bottom: 18px;
+  justify-content: flex-start;
+}
+.cell {
+  max-width: calc((__WIDTH__px - 104px - __GAPS__px) / __COLS__);
+}
+.row-label {
+  padding: 0 0 10px;
+}
+.row-label-text {
+  color: var(--caption-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.36em;
+}
+.row-label-line {
+  opacity: 1;
+  background: var(--rule);
+}
+.frame,
+.frame-p9,
+.row-p9 .frame,
+.cell-lotus .frame {
+  padding: 0;
+  border-radius: 4.8% / 3.4%;
+  background: none;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+  transform: none;
+}
+.frame-inner {
+  border: 0;
+  border-radius: 0;
+  background: var(--frame-inner-bg);
+}
+.frame-inner img {
+  filter: none;
+}
+.frame-top-glow {
+  display: none;
+}
+.badge-stack {
+  top: auto;
+  bottom: 9%;
+  width: 74%;
+  transform: translateX(-50%);
+}
+.caption {
+  padding-top: 8px;
+  color: var(--caption-ink);
+}
+.caption-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--caption-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.row-p9 .caption-meta {
+  border-bottom-color: var(--accent);
+}
+.caption-cond {
+  color: var(--caption-ink);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.caption .name-block {
+  margin: 8px 0 0;
+  color: var(--caption-ink);
+}
+.caption .name-jp {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--caption-ink);
+}
+.caption .name-en {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--caption-muted);
+}
+.caption .price-block {
+  margin-top: 4px;
+  color: var(--caption-ink);
+  text-align: left;
+}
+.caption .price-dual-line,
+.caption .price-line-single {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  font-family: var(--title-font);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.08;
+}
+.caption .price-line-single {
+  font-size: 27px;
+  line-height: 1.2;
+}
+.caption .price,
+.caption .price-amount {
+  font-family: var(--title-font);
+  font-size: inherit;
+  font-weight: 700;
+  text-shadow: none;
+}
+.caption .price-override-value {
+  font-size: 22px;
+}
+.caption .price-lang {
+  margin: 0;
+  color: var(--caption-muted);
+  font-family: var(--kicker-font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+.caption .price-label-rf,
+.caption .price-label-cf {
+  color: #f6ddff;
+}
+.caption .yen {
+  margin-left: 2px;
+  font-size: 0.56em;
+  font-weight: 600;
+}
+.ftr {
+  padding: 0 52px 22px;
+  text-align: left;
+}
+.ftr p {
+  color: var(--caption-muted);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.updated-at-global {
+  right: 52px;
+  bottom: 22px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  color: var(--caption-muted);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+`;
+
+function buildEditorialCss(width: number, cols: number): string {
+  return EDITORIAL_CSS.split("__WIDTH__")
+    .join(String(width))
+    .split("__GAPS__")
+    .join(String((cols - 1) * 16))
+    .split("__COLS__")
+    .join(String(cols));
+}
+
 const MTG_CARD_BACK_HTML = `<div class="cell cell-mtg-card-back">
     <div class="frame">
       <div class="frame-inner">
@@ -310,6 +590,7 @@ export function renderBuylistHtml(config: SheetConfig): string {
 
   const highEndSheet = isHighEndSheet(config.sheetName, config.cards);
   const theme = resolveTheme(config.theme);
+  const editorial = theme.layout === "editorial";
   const size = resolveOutputSize(config.outputSize);
   const gridCols = size.cols;
   const gridRows = getGridRows(size);
@@ -337,6 +618,7 @@ export function renderBuylistHtml(config: SheetConfig): string {
             showExpansionName,
             showRarityBadge,
             showCondition,
+            editorial,
           })
         );
       } else if (slot.kind === "mtg-card-back") {
@@ -919,12 +1201,29 @@ ${size.width < 1700 ? `.title-line {
   left: 0;
   transform-origin: top left;
 }
+${editorial ? buildEditorialCss(size.width, gridCols) : ""}
 </style>
 </head>
 <body>
 ${size.height ? `<div class="page" style="width:${size.width}px;height:${size.height}px">` : ""}
-<div class="panel" data-theme="${theme.id}">
-  <div class="hdr">
+<div class="panel" data-theme="${theme.id}" data-layout="${theme.layout}">
+  ${editorial ? `<div class="hdr">
+    <div class="hdr-title">
+      <div class="title-kicker">Buylist</div>
+      <div class="title-line">
+        <div class="title-text">${buildTitleHtml(config.title)}</div>
+        ${titleSubtitleHtml}
+      </div>
+    </div>
+    <div class="hdr-side">
+      ${config.logoGg ? logoGgHtml : ""}
+      ${config.logoMtg ? logoMtgHtml : ""}
+      <div class="hdr-cta">
+        <div class="cta-main">${escapeHtml(config.ctaMain)}</div>
+        <div class="cta-sub">${escapeHtml(config.ctaSub)}</div>
+      </div>
+    </div>
+  </div>` : `<div class="hdr">
     <div class="hdr-logos">
       ${logoGgHtml}
       ${logoMtgHtml}
@@ -946,7 +1245,7 @@ ${size.height ? `<div class="page" style="width:${size.width}px;height:${size.he
       <div class="cta-main">${escapeHtml(config.ctaMain)}</div>
       <div class="cta-sub">${escapeHtml(config.ctaSub)}</div>
     </div>
-  </div>
+  </div>`}
   <div class="hdr-divider"></div>
   <div class="grid">
     ${rows.join("\n    ")}

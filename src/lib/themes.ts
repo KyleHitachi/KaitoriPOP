@@ -2,11 +2,15 @@ import { Card } from "./types";
 
 export type ThemeId = "classic" | "mtg" | "fab" | "lorcana";
 export type GameId = "mtg" | "fab" | "lorcana";
+// "classic" overlays prices on the card art; "editorial" shows each card
+// whole with its prices in a caption underneath.
+export type BoardLayout = "classic" | "editorial";
 
 export interface Theme {
   id: ThemeId;
   label: string;
   game: GameId;
+  layout: BoardLayout;
   defaultTitle: string;
   defaultSubtitle: string;
   // Google Fonts families (css2 "family=" values) the theme's type needs.
@@ -31,6 +35,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     id: "classic",
     label: "クラシック（従来の配色）",
     game: "mtg",
+    layout: "classic",
     defaultTitle: "MTG 買取表",
     defaultSubtitle: "モダン・レガシー",
     fontFamilies: [],
@@ -40,6 +45,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     id: "mtg",
     label: "MTG（公式トンマナ）",
     game: "mtg",
+    layout: "editorial",
     defaultTitle: "MTG 買取表",
     defaultSubtitle: "モダン・レガシー",
     fontFamilies: ["Barlow+Semi+Condensed:wght@700;800"],
@@ -87,6 +93,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     id: "fab",
     label: "FaB（公式トンマナ）",
     game: "fab",
+    layout: "editorial",
     defaultTitle: "FaB 買取表",
     defaultSubtitle: "Flesh and Blood",
     fontFamilies: ["Cinzel:wght@700;900", "Shippori+Mincho+B1:wght@700;800"],
@@ -134,6 +141,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     id: "lorcana",
     label: "ロルカナ（公式トンマナ）",
     game: "lorcana",
+    layout: "editorial",
     defaultTitle: "ロルカナ 買取表",
     defaultSubtitle: "Disney Lorcana",
     fontFamilies: ["Barlow+Condensed:wght@600;700", "M+PLUS+Rounded+1c:wght@800"],

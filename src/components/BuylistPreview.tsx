@@ -19,6 +19,7 @@ import { Card, SheetConfig } from "@/lib/types";
 import { resolveOutputSize } from "@/lib/output-sizes";
 import { PREVIEW_CANVAS_HEIGHT } from "@/lib/layout-tokens";
 import { renderBuylistHtml } from "@/lib/html-renderer";
+import { patchDocument, preloadThemeFonts } from "@/lib/preview-patch";
 import { resolveCardImageSrc } from "@/lib/card-image";
 import { getSortedCards } from "@/lib/sort-engine";
 
@@ -48,37 +49,6 @@ function cellId(sortedIndex: number): string {
 
 function parseCellId(id: string | number): number {
   return Number(String(id).replace("cell-", ""));
-}
-
-// Swap styles and body in place so the iframe keeps its loaded fonts
-// instead of reloading (and flashing) on every edit.
-function patchDocument(doc: Document, html: string): void {
-  const next = new DOMParser().parseFromString(html, "text/html");
-  // Match our stylesheet by its marker, not by position: Adobe Fonts
-  // inserts its own <style> into the head after the first load.
-  const nextStyle = next.head.querySelector("style[data-buylist-style]");
-  const currentStyle = doc.head.querySelector("style[data-buylist-style]");
-  if (nextStyle && currentStyle && currentStyle.textContent !== nextStyle.textContent) {
-    currentStyle.textContent = nextStyle.textContent;
-  }
-
-  // Theme fonts come from stylesheet links; keep them in step so a theme
-  // switch loads its fonts without reloading the frame.
-  const nextLinks = Array.from(next.head.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]"));
-  const nextHrefs = new Set(nextLinks.map((link) => link.href));
-  doc.head.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]").forEach((link) => {
-    if (!nextHrefs.has(link.href)) link.remove();
-  });
-  const currentHrefs = new Set(
-    Array.from(doc.head.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")).map(
-      (link) => link.href
-    )
-  );
-  nextLinks.forEach((link) => {
-    if (!currentHrefs.has(link.href)) doc.head.appendChild(doc.importNode(link, true));
-  });
-
-  doc.body.innerHTML = next.body.innerHTML;
 }
 
 function measureCells(doc: Document): CellRect[] {
@@ -267,7 +237,9 @@ export default function BuylistPreview({ config, scale = 1, onCardClick, onReord
     const doc = iframeRef.current?.contentDocument;
     if (!loaded || !doc) return;
     if (appliedHtmlRef.current !== html) {
-      patchDocument(doc, html);
+      patchDocument(doc, html, () =>
+        (doc.defaultView as (Window & { __fitPanel?: () => void }) | null)?.__fitPanel?.()
+      );
       appliedHtmlRef.current = html;
     }
     measure();
@@ -292,6 +264,8 @@ export default function BuylistPreview({ config, scale = 1, onCardClick, onReord
   }, [loaded, measure]);
 
   const handleLoad = useCallback(() => {
+    const doc = iframeRef.current?.contentDocument;
+    if (doc) preloadThemeFonts(doc);
     appliedHtmlRef.current = initialHtml;
     setLoaded(true);
   }, [initialHtml]);

@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { SheetConfig, Card, GRID_TOTAL, ImageStatus, SortMode } from "@/lib/types";
 import {
   PREVIEW_CANVAS_HEIGHT,
 } from "@/lib/layout-tokens";
 import ExcelUploader from "@/components/ExcelUploader";
 import SheetTabs from "@/components/SheetTabs";
+import Segmented from "@/components/Segmented";
 import BuylistPreview from "@/components/BuylistPreview";
 import CardEditor from "@/components/CardEditor";
 import SettingsPanel from "@/components/SettingsPanel";
@@ -43,8 +45,15 @@ interface Notice {
   message: string;
 }
 
+const ZOOM_OPTIONS: { value: PreviewZoom; label: string }[] = [
+  { value: "fit", label: "全体" },
+  { value: 0.5, label: "50%" },
+  { value: 0.75, label: "75%" },
+  { value: 1, label: "100%" },
+];
+
 const SORT_MODE_OPTIONS: {
-  value: Exclude<SortMode, "custom">;
+  value: SortMode;
   label: string;
   title: string;
 }[] = [
@@ -109,10 +118,6 @@ const COPY = {
     "ドラッグで並び替え、カードをクリックして個別設定。キーボードでは Tab でカードを選び、Enter で編集、Alt+矢印で移動、Ctrl+Z で元に戻せます。",
   sampleError: "サンプルCSVの読み込みに失敗しました。",
   checksTitle: "出力前チェック",
-  zoomFit: "全体",
-  zoom50: "50%",
-  zoom75: "75%",
-  zoom100: "100%",
   darkMode: "ダーク",
   lightMode: "ライト",
 };
@@ -227,6 +232,25 @@ export default function Home() {
   const [, setHistoryVersion] = useState(0);
 
   const previewScale = previewZoom === "fit" ? fitPreviewScale : previewZoom;
+
+  // Colours swap in one cross-fade; per-element colour transitions would
+  // otherwise finish at different moments and look patchy.
+  const toggleDarkMode = useCallback(() => {
+    const root = document.documentElement;
+    const flip = () => flushSync(() => setIsDarkMode((value) => !value));
+    const viewTransitionDocument = document as Document & {
+      startViewTransition?: (update: () => void) => { finished: Promise<void> };
+    };
+    root.classList.add("ui-no-transitions");
+    if (!viewTransitionDocument.startViewTransition) {
+      flip();
+      requestAnimationFrame(() => root.classList.remove("ui-no-transitions"));
+      return;
+    }
+    viewTransitionDocument
+      .startViewTransition(flip)
+      .finished.finally(() => root.classList.remove("ui-no-transitions"));
+  }, []);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("kaitori-pop-theme");
@@ -821,7 +845,7 @@ export default function Home() {
             )}
             <button
               type="button"
-              onClick={() => setIsDarkMode((value) => !value)}
+              onClick={toggleDarkMode}
               className="ui-link text-ink-2"
             >
               {isDarkMode ? COPY.lightMode : COPY.darkMode}
@@ -831,24 +855,6 @@ export default function Home() {
       </header>
 
       <main className="mx-auto max-w-[1440px] px-6 pb-16 lg:px-10">
-        {notice && (
-          <div
-            role={notice.tone === "error" ? "alert" : "status"}
-            className="flex items-center gap-3 border-b border-line py-3 text-[13px]"
-          >
-            <span className={`ui-dot ${buildToneDotClass(notice.tone)}`} />
-            <div className="min-w-0 flex-1">{notice.message}</div>
-            <button
-              type="button"
-              aria-label="お知らせを閉じる"
-              onClick={() => setNotice(null)}
-              className="shrink-0 px-1 text-lg leading-none text-ink-3 transition hover:text-ink"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
         {!hasSheets ? (
           <div className="pt-16 lg:pt-24">
             <h1 className="max-w-[16em] text-[clamp(34px,5vw,64px)] font-light leading-[1.25] tracking-[-0.02em]">
@@ -969,39 +975,25 @@ export default function Home() {
             <div className="flex flex-col gap-10 xl:flex-row">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-3 border-y border-line py-3">
-                  <div className="ui-seg" role="group" aria-label="表示倍率">
-                    {[
-                      { label: COPY.zoomFit, value: "fit" as PreviewZoom },
-                      { label: COPY.zoom50, value: 0.5 as PreviewZoom },
-                      { label: COPY.zoom75, value: 0.75 as PreviewZoom },
-                      { label: COPY.zoom100, value: 1 as PreviewZoom },
-                    ].map((option) => (
-                      <button
-                        key={option.label}
-                        type="button"
-                        aria-pressed={previewZoom === option.value}
-                        onClick={() => setPreviewZoom(option.value)}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="ui-seg" role="group" aria-label="並び順">
-                    {SORT_MODE_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        aria-pressed={(currentConfig.sortMode ?? "auto") === option.value}
-                        title={option.title}
-                        onClick={() => handleSortModeChange(option.value)}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                    {currentConfig.sortMode === "custom" && (
-                      <span className="px-3 text-xs text-ink-2">手動調整</span>
-                    )}
-                  </div>
+                  <Segmented<PreviewZoom>
+                    label="表示倍率"
+                    options={ZOOM_OPTIONS}
+                    value={previewZoom}
+                    onChange={setPreviewZoom}
+                  />
+                  <Segmented<SortMode>
+                    label="並び順"
+                    options={SORT_MODE_OPTIONS}
+                    value={currentConfig.sortMode ?? "auto"}
+                    onChange={(mode) => {
+                      if (mode !== "custom") handleSortModeChange(mode);
+                    }}
+                    trailing={
+                      currentConfig.sortMode === "custom" ? (
+                        <span className="relative z-[1] px-3 text-xs text-ink-2">手動調整</span>
+                      ) : null
+                    }
+                  />
                   <select
                     aria-label="出力サイズ"
                     title="出力サイズ"
@@ -1044,7 +1036,7 @@ export default function Home() {
                   className="mt-6 overflow-auto bg-surface p-4 sm:p-6"
                 >
                   <div
-                    className="origin-top-left overflow-hidden"
+                    className="origin-top-left overflow-hidden transition-[width,height] duration-500 ease-[var(--ui-ease)]"
                     style={{
                       width: `${Math.round(canvasWidth * previewScale)}px`,
                       height: `${Math.round(previewCanvasHeight * previewScale)}px`,
@@ -1057,6 +1049,7 @@ export default function Home() {
                         width: `${canvasWidth}px`,
                         transform: `scale(${previewScale})`,
                         transformOrigin: "top left",
+                        transition: "transform 0.5s var(--ui-ease)",
                       }}
                     >
                       <BuylistPreview
@@ -1078,7 +1071,7 @@ export default function Home() {
               </div>
 
               {showSettings && (
-                <div className="w-full xl:w-[340px] xl:flex-shrink-0">
+                <div className="ui-enter-side w-full xl:w-[340px] xl:flex-shrink-0">
                   <div className="settings-scroll-panel xl:sticky xl:top-[88px] xl:max-h-[calc(100vh-112px)] xl:overflow-y-auto xl:pr-2">
                     <SettingsPanel
                       config={currentConfig}
@@ -1092,6 +1085,27 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {notice && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
+          <div
+            key={notice.message}
+            role={notice.tone === "error" ? "alert" : "status"}
+            className="ui-enter-up pointer-events-auto flex max-w-[640px] items-center gap-3 rounded-full bg-ink py-2.5 pl-5 pr-3 text-[13px] text-paper shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
+          >
+            <span className={`ui-dot ${buildToneDotClass(notice.tone, "text-paper/50")}`} />
+            <div className="min-w-0 flex-1">{notice.message}</div>
+            <button
+              type="button"
+              aria-label="お知らせを閉じる"
+              onClick={() => setNotice(null)}
+              className="shrink-0 rounded-full px-2 text-lg leading-none opacity-50 transition hover:opacity-100"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {editingCardIndex !== null && currentConfig && (
         <CardEditor

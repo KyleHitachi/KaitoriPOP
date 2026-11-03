@@ -6,6 +6,8 @@
  * or the main action. The buylist itself is styled by its theme, not here.
  */
 :root {
+  --ui-ease: cubic-bezier(0.22, 0.61, 0.24, 1);
+  interpolate-size: allow-keywords;
   --ui-paper: #ffffff;
   --ui-surface: #f4f4f4;
   --ui-ink: #121212;
@@ -80,10 +82,14 @@ body {
     font-size: 13px;
     white-space: nowrap;
     transition:
-      border-color 0.2s,
-      background-color 0.2s,
-      color 0.2s,
-      opacity 0.2s;
+      border-color 0.25s var(--ui-ease),
+      background-color 0.25s var(--ui-ease),
+      color 0.25s var(--ui-ease),
+      opacity 0.25s var(--ui-ease),
+      transform 0.15s var(--ui-ease);
+  }
+  .ui-btn:active:not(:disabled) {
+    transform: scale(0.96);
   }
   .ui-btn:hover:not(:disabled) {
     border-color: var(--ui-ink);
@@ -124,13 +130,17 @@ body {
     height: 1px;
     background: currentColor;
     transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s ease;
+    transform-origin: right;
+    transition: transform 0.45s var(--ui-ease);
   }
   .ui-link:hover:not(:disabled)::after,
   .ui-link[aria-selected="true"]::after,
   .ui-link[aria-pressed="true"]::after {
     transform: scaleX(1);
+    transform-origin: left;
+  }
+  .ui-link:active:not(:disabled) {
+    opacity: 0.6;
   }
   .ui-link:disabled {
     cursor: not-allowed;
@@ -147,22 +157,33 @@ body {
     border-radius: 999px;
   }
   .ui-seg > button {
+    position: relative;
+    z-index: 1;
     height: 28px;
     padding: 0 14px;
     border-radius: 999px;
     color: var(--ui-ink-2);
     font-size: 12px;
     white-space: nowrap;
-    transition:
-      background-color 0.2s,
-      color 0.2s;
+    transition: color 0.35s var(--ui-ease);
   }
   .ui-seg > button:hover {
     color: var(--ui-ink);
   }
   .ui-seg > button[aria-pressed="true"] {
-    background: var(--ui-ink);
     color: var(--ui-paper);
+  }
+  .ui-seg-pill {
+    position: absolute;
+    top: 3px;
+    left: 0;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--ui-ink);
+    transition:
+      transform 0.45s var(--ui-ease),
+      width 0.45s var(--ui-ease),
+      opacity 0.2s;
   }
 
   /* Underlined field, no box. */
@@ -230,6 +251,59 @@ body {
     flex-shrink: 0;
     border-radius: 999px;
     background: currentColor;
+  }
+}
+
+/* Settings sections open and close smoothly where the browser supports it. */
+details::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 0.4s var(--ui-ease),
+    content-visibility 0.4s allow-discrete;
+}
+details[open]::details-content {
+  height: auto;
+}
+
+/* Brief entrance used by the settings panel and toasts. */
+@keyframes ui-enter-side {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+@keyframes ui-enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.ui-enter-side {
+  animation: ui-enter-side 0.45s var(--ui-ease) both;
+}
+.ui-enter-up {
+  animation: ui-enter-up 0.4s var(--ui-ease) both;
+}
+
+/* Theme switch: the whole page cross-fades instead of each element easing
+   its colours on its own schedule. */
+.ui-no-transitions,
+.ui-no-transitions * {
+  transition: none !important;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
+  animation-timing-function: var(--ui-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

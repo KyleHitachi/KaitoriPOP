@@ -77,3 +77,37 @@ test("the renderer applies theme variables, fonts and the title highlight", () =
   const classic = renderBuylistHtml({ ...sheet, theme: undefined });
   assert.doesNotMatch(classic, /fonts\.googleapis/);
 });
+
+test("official themes show each card whole with a price caption; classic keeps the overlay", () => {
+  const cards = [card({ id: "a", condition: "SP", set: "LEA" })];
+  const base = {
+    sheetName: "Sheet1",
+    title: "MTG 買取表",
+    cards,
+    sortedOrder: [0],
+    rowLabels: [],
+    showCardNames: false,
+    showExpansionName: true,
+    showRarityBadge: false,
+    showCondition: true,
+    ctaMain: "高価買取中",
+    ctaSub: "店頭でそのまま査定できます",
+    footerText: "* 掲載価格は参考価格です。",
+    updatedAtText: "",
+  };
+
+  for (const theme of ["mtg", "fab", "lorcana"] as const) {
+    assert.equal(THEMES[theme].layout, "editorial");
+    const html = renderBuylistHtml({ ...base, theme });
+    assert.match(html, /data-layout="editorial"/);
+    assert.match(html, /<div class="caption-meta"><span class="caption-cond">SP<\/span><span class="caption-set">EN \/ LEA<\/span><\/div>/);
+    assert.doesNotMatch(html, /<div class="bot">/);
+    // Empty logo slots are left out instead of showing placeholders.
+    assert.doesNotMatch(html, /logo-placeholder">ロゴ/);
+  }
+
+  const classic = renderBuylistHtml(base);
+  assert.match(classic, /data-layout="classic"/);
+  assert.match(classic, /<div class="bot">/);
+  assert.doesNotMatch(classic, /class="caption"/);
+});
