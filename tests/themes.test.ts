@@ -70,7 +70,7 @@ test("the renderer applies theme variables, fonts and the title highlight", () =
   const html = renderBuylistHtml(sheet);
 
   assert.equal(sheet.theme, "lorcana");
-  assert.match(html, /--accent: #D89E47;/);
+  assert.match(html, /--accent: #B97F2C;/);
   assert.match(html, /fonts\.googleapis\.com\/css2\?family=Barlow\+Condensed/);
   assert.match(html, /<span class="title-highlight">ロルカナ<\/span> 買取表/);
 

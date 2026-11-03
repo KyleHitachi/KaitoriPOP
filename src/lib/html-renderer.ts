@@ -258,10 +258,10 @@ function buildCardHtml(
     // sits on the art people recognise the card by.
     const tags = [
       foilBadge
-        ? `<span class="band-tag" style="background:${foilStyle.background};border:${foilStyle.border};color:${foilStyle.textColor};">${escapeHtml(foilBadgeLines.join(" "))}</span>`
+        ? `<span class="band-tag" style="color:${foilStyle.textColor};">${escapeHtml(foilBadgeLines.join(" "))}</span>`
         : "",
       options.showRarityBadge && rarity && rarityStyle
-        ? `<span class="band-tag" style="background:${rarityStyle.background};border:${rarityStyle.border};"><span style="background:${rarityStyle.textBackground};color:${rarityStyle.textColor ?? "inherit"};${rarityStyle.textBackground === "none" ? "" : "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"}">${escapeHtml(rarity)}</span></span>`
+        ? `<span class="band-tag" style="background:${rarityStyle.textBackground};color:${rarityStyle.textColor ?? "inherit"};${rarityStyle.textBackground === "none" ? "" : "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"}">${escapeHtml(rarity)}</span>`
         : "",
     ].join("");
     const leftHtml = `${options.showCondition ? `<span class="band-cond">${escapeHtml(card.condition)}</span>` : ""}${tags}`;
@@ -323,155 +323,53 @@ const PANEL_PATTERN =
   "linear-gradient(135deg, rgba(121,96,53,0.05) 0 1px, transparent 1px 52px), linear-gradient(90deg, rgba(255,255,255,0.45), transparent 42%, rgba(153,118,54,0.08)), linear-gradient(180deg, #f4efe4 0%, #e7dfce 100%)";
 
 const EDITORIAL_CSS = String.raw`
-/* Editorial look on the same layout: cards keep their size and the prices
-   stay over the card's text box (people find cards by their art); only the
-   finish changes. Colour and type still come from the theme. */
+/* Game themes keep the classic board and change only what read as UI
+   chrome: no boxed buttons or chips, and a price band lined up across the
+   row in the game's dark colour. */
+.panel {
+  --rule: color-mix(in srgb, var(--title-ink) 16%, transparent);
+  --band-soft: color-mix(in srgb, var(--band-ink) 62%, transparent);
+}
 /* In a fixed canvas only the page paints the background, so a board that
    does not fill the canvas shows no seam. */
 .page .panel {
   background: none;
 }
-.panel {
-  --rule: color-mix(in srgb, var(--title-ink) 16%, transparent);
-  --soft-ink: color-mix(in srgb, var(--title-ink) 58%, transparent);
-  --band: var(--panel-bg);
-  --accent-rule: color-mix(in srgb, var(--accent) 55%, transparent);
-}
-.page,
-.panel {
-  background: var(--panel-bg)
-    radial-gradient(ellipse 70% 60% at 50% 38%, color-mix(in srgb, var(--panel-bg), #ffffff 7%) 0%, transparent 100%);
-  background-size: 100% 100%;
-}
 .hdr {
-  flex-wrap: wrap;
-  align-items: flex-end;
-  row-gap: 16px;
-  padding: 22px 36px 18px;
-  border-bottom: 1px solid var(--rule);
-  background: transparent;
-  box-shadow: none;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
 }
-.hdr-title {
-  min-width: 0;
+.hdr-logos {
+  justify-self: start;
 }
-.title-kicker {
-  margin-bottom: 10px;
-  color: var(--soft-ink);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.4em;
-}
-.title-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 26px;
-  row-gap: 8px;
-}
-.title-text {
-  font-size: 64px;
-  line-height: 0.95;
-}
-.title-subtitle {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  color: var(--soft-ink);
-  font-size: 20px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-}
-.title-subtitle span {
-  color: inherit;
-}
-.hdr-side {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 24px;
+.title {
+  justify-content: center;
 }
 .hdr-cta {
+  justify-self: end;
   min-width: 0;
   border: 0;
-  border-radius: 4px;
-  padding: 14px 26px;
-  text-align: left;
+  border-left: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 2px 0 2px 22px;
+  background: none;
   box-shadow: none;
+  text-align: left;
 }
 .hdr-cta .cta-main {
-  font-size: 24px;
-  font-weight: 700;
+  color: var(--cta-main);
+  font-family: var(--title-font);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
   letter-spacing: 0.06em;
 }
 .hdr-cta .cta-sub {
-  margin-top: 4px;
+  margin-top: 5px;
+  color: var(--cta-sub);
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.04em;
-}
-.hdr-divider {
-  height: 14px;
-}
-.row-label {
-  padding: 0 2px 8px;
-}
-.row-label-text {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--title-ink);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-}
-.row-label-text::before {
-  content: "";
-  width: 24px;
-  height: 2px;
-  background: var(--accent);
-}
-.row-label-line {
-  opacity: 1;
-  background: var(--rule);
-}
-.frame,
-.frame-p9,
-.row-p9 .frame,
-.cell-lotus .frame {
-  padding: 0;
-  border-radius: 4.8% / 3.4%;
-  background: none;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
-  transform: none;
-}
-.row-p9 .frame-inner::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 40% 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    125deg,
-    transparent 18%,
-    rgba(255, 120, 200, 0.9) 32%,
-    rgba(120, 220, 255, 0.9) 44%,
-    rgba(255, 240, 140, 0.9) 56%,
-    transparent 70%
-  );
-  mix-blend-mode: color-dodge;
-  opacity: 0.14;
-}
-.row-p9 .frame {
-  box-shadow: 0 0 0 1px var(--accent-rule), 0 12px 26px rgba(0, 0, 0, 0.36);
-}
-.frame-inner {
-  border: 0;
-  border-radius: 0;
-  background: var(--frame-inner-bg);
-}
-.frame-inner img {
-  filter: none;
 }
 .bot {
   background: linear-gradient(
@@ -483,7 +381,6 @@ const EDITORIAL_CSS = String.raw`
   );
 }
 .bot-inner {
-  z-index: 2;
   justify-content: flex-end;
   padding: 0 9px 8px;
   border-top: 0;
@@ -495,8 +392,8 @@ const EDITORIAL_CSS = String.raw`
   gap: 6px;
   margin-bottom: 4px;
   padding-bottom: 4px;
-  border-bottom: 1px solid var(--accent-rule);
-  color: color-mix(in srgb, var(--title-ink) 62%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--row-line) 60%, transparent);
+  color: var(--band-soft);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -505,34 +402,25 @@ const EDITORIAL_CSS = String.raw`
 .row-p9 .band-meta {
   border-bottom-color: var(--accent);
 }
-.band-cond {
-  display: inline-flex;
-  height: 14px;
-  align-items: center;
-  border: 1px solid color-mix(in srgb, var(--title-ink) 55%, transparent);
-  border-radius: 2px;
-  padding: 0 4px;
-  color: var(--title-ink);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-}
 .band-left {
   display: flex;
   min-width: 0;
-  align-items: center;
-  gap: 5px;
+  align-items: baseline;
+  gap: 7px;
   overflow: hidden;
 }
-.band-left .band-tag {
+.band-cond {
+  color: var(--band-ink);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.band-tag {
   overflow: hidden;
-  border-radius: 3px;
-  padding: 1px 5px;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-overflow: ellipsis;
+  text-transform: uppercase;
 }
 /* Every card reserves the same two-line price area and prices end on the
    same right edge, so a row of prices reads as one line. */
@@ -541,16 +429,13 @@ const EDITORIAL_CSS = String.raw`
   height: 2.2em;
   flex-direction: column;
   justify-content: flex-end;
-  font-size: 25px;
-}
-.bot .price-line-single > :last-child {
-  margin-left: auto;
+  font-size: var(--price-size, 27px);
 }
 .bot .name-block {
   margin: 0 0 3px;
 }
 .bot .price-block {
-  color: var(--title-ink);
+  color: var(--band-ink);
   text-align: left;
   font-variant-numeric: tabular-nums;
 }
@@ -569,6 +454,9 @@ const EDITORIAL_CSS = String.raw`
 .bot .price-line-single {
   font-size: calc(var(--price-size, 27px) * 1.18);
 }
+.bot .price-line-single > :last-child {
+  margin-left: auto;
+}
 .bot .price,
 .bot .price-amount {
   font-family: var(--title-font);
@@ -581,7 +469,7 @@ const EDITORIAL_CSS = String.raw`
 }
 .bot .price-lang {
   margin: 0;
-  color: color-mix(in srgb, var(--title-ink) 60%, transparent);
+  color: var(--band-soft);
   font-family: var(--kicker-font);
   font-size: 10px;
   font-weight: 600;
@@ -589,36 +477,32 @@ const EDITORIAL_CSS = String.raw`
 }
 .bot .price-label-rf,
 .bot .price-label-cf {
-  color: #f6ddff;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: #c9a6ff;
+}
+.bot .price-label-cf {
+  color: #d9e2ea;
 }
 .bot .yen {
   margin-left: 2px;
   font-size: 0.55em;
   font-weight: 600;
 }
-.ftr {
-  padding: 6px 36px 18px;
-  text-align: left;
-}
-.ftr p {
-  color: var(--soft-ink);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  opacity: 0.85;
-}
 .updated-at-global {
-  right: 36px;
-  bottom: 18px;
   border: 0;
   border-radius: 0;
   padding: 0;
   background: none;
   box-shadow: none;
   backdrop-filter: none;
-  color: var(--soft-ink);
-  font-size: 13px;
-  font-weight: 500;
+  color: var(--footer-ink);
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: 0.06em;
 }
 `;
@@ -1263,26 +1147,10 @@ ${editorial ? EDITORIAL_CSS : ""}
 <body>
 ${size.height ? `<div class="page" style="width:${size.width}px;height:${size.height}px">` : ""}
 <div class="panel" data-theme="${theme.id}" data-layout="${theme.layout}">
-  ${editorial ? `<div class="hdr">
-    <div class="hdr-title">
-      <div class="title-kicker">Buylist</div>
-      <div class="title-line">
-        <div class="title-text">${buildTitleHtml(config.title)}</div>
-        ${titleSubtitleHtml}
-      </div>
-    </div>
-    <div class="hdr-side">
-      ${config.logoGg ? logoGgHtml : ""}
-      ${config.logoMtg ? logoMtgHtml : ""}
-      <div class="hdr-cta">
-        <div class="cta-main">${escapeHtml(config.ctaMain)}</div>
-        <div class="cta-sub">${escapeHtml(config.ctaSub)}</div>
-      </div>
-    </div>
-  </div>` : `<div class="hdr">
+  <div class="hdr">
     <div class="hdr-logos">
-      ${logoGgHtml}
-      ${logoMtgHtml}
+      ${editorial && !config.logoGg ? "" : logoGgHtml}
+      ${editorial && !config.logoMtg ? "" : logoMtgHtml}
     </div>
     <div class="title">
       <div class="title-shell">
@@ -1301,7 +1169,7 @@ ${size.height ? `<div class="page" style="width:${size.width}px;height:${size.he
       <div class="cta-main">${escapeHtml(config.ctaMain)}</div>
       <div class="cta-sub">${escapeHtml(config.ctaSub)}</div>
     </div>
-  </div>`}
+  </div>
   <div class="hdr-divider"></div>
   <div class="grid">
     ${rows.join("\n    ")}
